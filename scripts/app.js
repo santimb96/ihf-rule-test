@@ -4,6 +4,7 @@
  * dataset before scripts/data.js (it throws at init when IHF_DATA is missing),
  * render/hint before the screens, and scripts/main.js last.
  */
+import "../data/rules.js";
 import "../data/questions.js";
 import "./scoring.js";
 import "./quiz.js";

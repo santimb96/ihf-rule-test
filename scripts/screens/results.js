@@ -87,14 +87,9 @@
       {
         class: "review-card relative rounded-2xl border border-slate-200 bg-white p-4 shadow-card",
       },
-      // Side rule sits on the content edge, so the card keeps one uniform 16px
-      // padding all around instead of the rule hugging the border. h-auto beats
-      // the preflight `hr { height: 0 }` so top/bottom can size it.
-      el("hr", { class: "absolute left-4 top-4 bottom-4 m-0 h-auto w-0.5 border-0 " + bar }),
-      // Content is inset past the rule; the answer rows shrink by the same 12px.
       el(
         "div",
-        { class: "pl-3" },
+        { class: "" },
         el(
           "div",
           { class: "flex flex-wrap items-center justify-between gap-3" },
@@ -238,13 +233,6 @@
             ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70"
             : "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/60"),
       },
-      // Same rule treatment as the cards: it sits on the content edge
-      // (p-6 / sm:p-8) so the padding stays uniform, and stays thin.
-      el("hr", {
-        class:
-          "absolute left-6 top-6 bottom-6 m-0 h-auto w-0.5 border-0 sm:left-8 sm:top-8 sm:bottom-8 " +
-          (report.passed ? "bg-emerald-500" : "bg-rose-500"),
-      }),
       el("div", {
         class: "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl " + (report.passed ? "bg-emerald-300/30" : "bg-rose-300/30"),
       }),

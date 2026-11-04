@@ -9,7 +9,7 @@
   var R = global.IHFRender;
   var D = global.IHFData;
 
-  function chipNode(chip) {
+  function chipNode(chip, question) {
     var cls =
       "inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100/70 px-2.5 py-1 text-xs font-medium text-amber-900 transition hover:border-amber-300 hover:bg-amber-200/80";
     if (chip.page) {
@@ -25,11 +25,28 @@
     return R.el("span", { class: cls, text: chip.label });
   }
 
+  function getGuidelineText(question) {
+    if (!global.IHF_RULES || !global.IHF_RULES.directrices) return null;
+    var chips = D.chips(question);
+    for (var i = 0; i < chips.length; i++) {
+      var m = chips[i].raw.match(/(\d{1,2})[:.](\d+)/);
+      if (m) {
+        var key = m[1] + ":" + m[2];
+        var dirs = global.IHF_RULES.directrices[key];
+        if (dirs && dirs.length > 0) {
+          return dirs[0].text;
+        }
+      }
+    }
+    return null;
+  }
+
   function create(question) {
     var chips = D.chips(question);
     var firstLink = chips.filter(function (c) {
       return c.page;
     })[0];
+    var guidelineText = getGuidelineText(question);
 
     var label = R.el("span", { text: "Ver pista" });
     var open = false;
@@ -50,7 +67,7 @@
               "div",
               { class: "min-w-0" },
               R.el("p", { class: "text-[11px] font-semibold uppercase tracking-wider text-amber-600", text: "Pista · directrices de la respuesta" }),
-              R.el("div", { class: "mt-2 flex flex-wrap gap-2", kids: chips.map(chipNode) }),
+              R.el("div", { class: "mt-2 flex flex-wrap gap-2", kids: chips.map(function(c) { return chipNode(c, question); }) }),
             ),
             firstLink
               ? R.el("a", {
@@ -62,8 +79,14 @@
                 })
               : null,
           ),
+          guidelineText
+            ? R.el("p", {
+                class: "mt-3 text-xs italic leading-relaxed text-slate-600",
+                text: "“" + guidelineText + "”",
+              })
+            : null,
           R.el("p", {
-            class: "mt-3 text-xs leading-relaxed text-slate-500",
+            class: "mt-2 text-xs leading-relaxed text-slate-500",
             text: "El catálogo de respuestas cita estas directrices como fundamento de la respuesta correcta.",
           }),
         ),
