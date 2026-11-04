@@ -78,6 +78,27 @@
       onRetry: function () {
         startQuiz(state.config);
       },
+      onRetryFailed: function () {
+        var failedQuestions = state.report.results
+          .filter(function (r) { return !r.correct; })
+          .map(function (r) { return r.question; });
+        
+        var customPool = failedQuestions;
+        var customSize = Math.min(state.config.size, customPool.length);
+        
+        state.config = Object.assign({}, state.config, { size: customSize });
+        var pool = customPool;
+        state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: customSize });
+        R.showScreen("screen-quiz");
+        Screens.quiz.mount(screenNode("screen-quiz"), {
+          quiz: state.quiz,
+          onFinish: function (report) {
+            state.report = report;
+            showResults();
+          },
+          onExit: showSetup,
+        });
+      },
       onNew: showSetup,
     });
   }

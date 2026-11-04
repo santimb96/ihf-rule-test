@@ -301,6 +301,18 @@
               kids: [R.icon("refresh", "h-4 w-4"), "Repetir test"],
             },
           ),
+          report.results.some(function (r) { return !r.correct; })
+            ? el(
+                "button",
+                {
+                  type: "button",
+                  class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 active:translate-y-px",
+                  "data-action": "retry-failed",
+                  on: { click: ctx.onRetryFailed },
+                  kids: [R.icon("alert", "h-4 w-4"), "Repetir solo fallos (" + report.results.filter(function (r) { return !r.correct; }).length + ")"],
+                },
+              )
+            : null,
           el(
             "button",
             {
