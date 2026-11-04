@@ -1,3 +1,10 @@
 /tools
 /odd
 .atl
+
+# build + dependencies
+node_modules/
+dist/
+.vite/
+*.local
+.DS_Store
