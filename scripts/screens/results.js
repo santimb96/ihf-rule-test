@@ -43,7 +43,7 @@
     // Status pill. A partial sweep is not a plain miss, and an unanswered
     // question is not a wrong answer.
     var status = result.correct
-      ? { label: "Aceptada", icon: "check", tone: "bg-emerald-100 text-emerald-700" }
+      ? { label: "Acertada", icon: "check", tone: "bg-emerald-100 text-emerald-700" }
       : unanswered
         ? { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600" }
         : wrongPick
