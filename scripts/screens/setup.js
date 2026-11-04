@@ -111,9 +111,9 @@
 
     function buildChip(topic) {
       var check = el("span", {
-        class: "grid h-6 w-6 place-items-center rounded-full bg-brand-600 text-white transition-opacity p-1",
+        class: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition-opacity p-1",
         style: { opacity: "0" },
-        html: R.ICONS.check,
+        kids: [R.icon("check", "h-4 w-4 text-white")],
       });
       var badge = el("span", { class: chipBadge(false), text: topic.id === "SAR" ? "ZC" : topic.id });
       var count = D.pool([topic.id]).length;

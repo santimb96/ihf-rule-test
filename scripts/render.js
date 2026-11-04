@@ -1,26 +1,29 @@
 /**
  * Small DOM helpers shared by every screen: element building, screen
- * switching, toasts and the inline icon set.
+ * switching, toasts and the inline icon set loaded asynchronously from assets.
  */
 (function (global) {
   "use strict";
 
-  var ICONS = {
-    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>',
-    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v9"/><path d="M12 18.5h.01"/></svg>',
-    dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12"/></svg>',
-    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    bulb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.7 1 1.4 1 2.5h6c0-1.1.4-1.8 1-2.5A6 6 0 0 0 12 3Z"/></svg>',
-    left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>',
-    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 6 6 6-6 6"/></svg>',
-    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></svg>',
-    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>',
-    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-.6 4M20 5v6h-6"/></svg>',
-    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7v7H4zM13 5h7v4h-7zM13 12h7v7h-7zM4 15h7v4H4z"/></svg>',
-    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Zm0 0v5h5M9 13h6M9 17h4"/></svg>',
-    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-  };
+  var ICONS = {};
+  var iconPromises = {};
+
+  var ICON_NAMES = [
+    "check", "alert", "dash", "x", "bulb", "left", "right",
+    "flag", "download", "refresh", "grid", "close", "doc", "clock"
+  ];
+
+  ICON_NAMES.forEach(function (name) {
+    iconPromises[name] = fetch("./assets/icons/" + name + ".svg")
+      .then(function (res) { return res.text(); })
+      .then(function (svg) {
+        ICONS[name] = svg;
+        return svg;
+      })
+      .catch(function () {
+        ICONS[name] = "";
+      });
+  });
 
   function append(node, child) {
     if (child == null || child === false) return;
@@ -46,7 +49,6 @@
     Object.keys(props).forEach(function (key) {
       var value = props[key];
       if (value == null || value === false) return;
-      // className is read-only on SVG elements, so the attribute is the safe path.
       if (key === "class") node.setAttribute("class", value);
       else if (key === "text") node.textContent = value;
       else if (key === "html") node.innerHTML = value;
@@ -83,7 +85,6 @@
     });
     var target = document.getElementById(id);
     target.classList.remove("hidden");
-    // Re-trigger the entrance animation.
     target.style.animation = "none";
     void target.offsetHeight;
     target.style.animation = "";
@@ -102,7 +103,15 @@
   }
 
   function icon(name, className) {
-    return el("span", { class: className || "h-5 w-5", html: ICONS[name] || "" });
+    var span = el("span", { class: className || "h-5 w-5" });
+    if (ICONS[name]) {
+      span.innerHTML = ICONS[name];
+    } else if (iconPromises[name]) {
+      iconPromises[name].then(function (svg) {
+        span.innerHTML = svg;
+      });
+    }
+    return span;
   }
 
   global.IHFRender = {
