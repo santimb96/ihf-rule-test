@@ -18,8 +18,15 @@
     var unanswered = result.selected.length === 0;
 
     var status = result.correct
-      ? { label: "Aceptada", icon: "check", tone: "bg-emerald-100 text-emerald-700", bar: "border-l-emerald-500" }
-      : { label: unanswered ? "Sin responder" : "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700", bar: "border-l-rose-500" };
+      ? { label: "Aceptada", icon: "check", tone: "bg-emerald-100 text-emerald-700" }
+      : { label: unanswered ? "Sin responder" : "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700" };
+
+    // Side band: green when every correct answer of the question was hit, red
+    // when not a single one was, amber for a partial sweep in between.
+    var hits = q.answer.filter(function (letter) {
+      return result.selected.indexOf(letter) !== -1;
+    }).length;
+    var bar = result.correct ? "border-l-emerald-500" : hits === 0 ? "border-l-rose-500" : "border-l-amber-500";
 
     var optionRows = q.options.map(function (opt) {
       var isCorrect = q.answer.includes(opt.letter);
@@ -63,7 +70,7 @@
     return el(
       "article",
       {
-        class: "review-card rounded-2xl border border-l-4 border-slate-200 bg-white p-4 shadow-card " + status.bar,
+        class: "review-card rounded-2xl border border-l-4 border-slate-200 bg-white p-4 shadow-card " + bar,
       },
       el(
         "div",
