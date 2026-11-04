@@ -20,7 +20,7 @@
     [
       D.meta.questionCount + " preguntas",
       D.topics().length + " temas",
-      "Aprobado ≥75%",
+      "Aprobado ≥ 75%",
     ].forEach(function (text) {
       R.append(
         host,

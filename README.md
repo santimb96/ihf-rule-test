@@ -1,4 +1,4 @@
-# IHF Rules Trainer
+# Reglas de juego IHF
 
 Local study platform built on the official IHF question catalogues in `documents/`:
 pick topics, pick a length (5/10/20/30), answer, check the cited guidelines through

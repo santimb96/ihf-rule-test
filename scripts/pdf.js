@@ -186,21 +186,20 @@
       if (first) {
         setFill(C.amber);
         rrect(X0, 9.5, 15, 15, 2.5, "F");
-        txt("IHF", X0 + 7.5, 17.4, {
+        txt("R", X0 + 7.5, 17.4, {
           style: "bold",
           size: 11,
           color: C.navy,
           align: "center",
           baseline: "middle",
         });
-
         txt("INFORME DE RESULTADOS", X0 + 21, 11.5, {
           style: "bold",
           size: TYPE.caption.size,
           color: C.amber,
           charSpace: 1.2,
         });
-        txt("IHF RULES TRAINER", X0 + 21, 21, {
+        txt("Reglas de juego IHF", X0 + 21, 21, {
           style: "bold",
           size: TYPE.title.size,
           color: C.white,
@@ -224,7 +223,7 @@
           align: "right",
         });
       } else {
-        txt("IHF RULES TRAINER", X0, 10.5, {
+        txt("Reglas de juego IHF", X0, 10.5, {
           style: "bold",
           size: TYPE.body.size,
           color: C.white,
@@ -622,7 +621,7 @@
         doc.setLineWidth(0.3);
         doc.line(X0 + 16, FOOT_Y, X1, FOOT_Y);
         txt(
-          "IHF Rules Trainer - Catálogo de preguntas IHF (ES) + Answer key (EN), jul 2025",
+          "Reglas de juego IHF - Catálogo de preguntas IHF (ES) + Resolución de preguntas (EN), jul 2025",
           X0,
           FOOT_Y + 5.5,
           { size: TYPE.caption.size, color: C.muted },

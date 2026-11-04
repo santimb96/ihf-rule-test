@@ -68,7 +68,7 @@
           entry.button.classList.toggle("size-active", active);
           entry.button.setAttribute("aria-pressed", String(active));
         }
-        var hint = enabled ? "≥75% de respuestas" : "no hay preguntas suficientes";
+        var hint = !enabled ? "no hay suficientes preguntas" : "";
         if (entry.hint.textContent !== hint) entry.hint.textContent = hint;
         // New: show notice when pool has < 5 questions but test proceeds
         if (available < entry.size && entry.size === 5 && available >= 1) {
@@ -111,7 +111,7 @@
 
     function buildChip(topic) {
       var check = el("span", {
-        class: "grid h-6 w-6 place-items-center rounded-full bg-brand-600 text-white transition-opacity",
+        class: "grid h-6 w-6 place-items-center rounded-full bg-brand-600 text-white transition-opacity p-1",
         style: { opacity: "0" },
         html: R.ICONS.check,
       });
@@ -182,12 +182,12 @@
       el(
         "div",
         { class: "relative" },
-        el("p", { class: "text-xs font-semibold uppercase tracking-[0.18em] text-accent-300", text: "Catálogo oficial IHF · válido desde el 1 de julio de 2025" }),
-        el("h1", { class: "mt-2 font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de Reglas de Juego" }),
+        el("p", { class: "text-xs font-semibold uppercase tracking-[0.18em] text-accent-300", text: "Basado en el catálogo oficial IHF · válido desde el 1 de julio de 2025" }),
+        el("h1", { class: "mt-2 font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
         el("p", {
           class: "mt-3 max-w-2xl text-sm leading-relaxed text-brand-100/90 sm:text-base",
           text: D.meta.questionCount +
-            " preguntas con sus respuestas y las directrices en las que se basan, extraídas de los catálogos oficiales. Filtra por tema, elige la longitud y aprueba con un 75% o más.",
+            " preguntas con sus respuestas y las directrices en las que se basan, extraídas de los catálogos oficiales. Filtra por tema, elige la longitud del test y responde a las preguntas.",
         }),
         el(
           "div",
@@ -195,8 +195,7 @@
           [
             D.meta.questionCount + " preguntas",
             D.topics().length + " temas",
-            D.questions().filter(function (q) { return q.answer.length > 1; }).length + " con varias respuestas",
-            "Aprobado ≥75%",
+            "Aprobado ≥ 75%",
           ].map(function (text) {
             return el("span", {
               class: "rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium text-white/95 backdrop-blur",
@@ -215,8 +214,8 @@
         { class: "flex flex-wrap items-center justify-between gap-3" },
         el(
           "div",
-          { class: "flex items-center gap-3" },
-          el("span", { class: "grid h-8 w-8 place-items-center rounded-lg bg-brand-600 font-display text-sm font-bold text-white", text: "1" }),
+          { class: "flex items-start gap-3" },
+          el("span", { class: "font-display text-4xl font-bold text-brand-700 mr-2", text: "1" }),
           el("div", null,
             el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Temas del test" }),
             el("p", { class: "text-xs text-slate-500", text: "Selecciona los temas de las Reglas de Juego que quieres practicar" }),
@@ -250,11 +249,11 @@
       { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
       el(
         "div",
-        { class: "flex items-center gap-3" },
-        el("span", { class: "grid h-8 w-8 place-items-center rounded-lg bg-brand-600 font-display text-sm font-bold text-white", text: "2" }),
+        { class: "flex items-start gap-3" },
+        el("span", { class: "font-display text-4xl font-bold text-brand-700 mr-2", text: "2" }),
         el("div", null,
           el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Preguntas por cuestionario" }),
-          el("p", { class: "text-xs text-slate-500", text: "Se aprueba con un 75% o más de respuestas correctas" }),
+          el("p", { class: "text-xs text-slate-500", text: "Se aprueba con un 75% o más de respuestas correctas. Cada pregunta puede tener una o varias respuestas." }),
         ),
       ),
       el("div", {
