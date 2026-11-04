@@ -12,83 +12,109 @@
 
   var CIRCUMFERENCE = 2 * Math.PI * 54;
 
+  // Option row states in the review list. "missed" is a correct answer the user
+  // never picked: amber with an alert so it never reads as a hit.
+  var OPTION_STATE = {
+    hit: { tone: "border-emerald-200 bg-emerald-50/80", badge: "bg-emerald-600 text-white", text: "text-slate-800", icon: "check", iconCls: "text-emerald-600" },
+    missed: { tone: "border-amber-200 bg-amber-50/80", badge: "bg-amber-500 text-white", text: "text-slate-800", icon: "alert", iconCls: "text-amber-600" },
+    wrong: { tone: "border-rose-200 bg-rose-50/80", badge: "bg-rose-600 text-white", text: "text-slate-800", icon: "x", iconCls: "text-rose-600" },
+    plain: { tone: "border-slate-100 bg-slate-50/60", badge: "bg-slate-200 text-slate-500", text: "text-slate-500", icon: null, iconCls: null },
+  };
+
   function reviewCard(result) {
     var q = result.question;
     var hint = Hint.create(q);
     var unanswered = result.selected.length === 0;
+    var wrongPick = result.selected.some(function (letter) {
+      return q.answer.indexOf(letter) === -1;
+    });
 
+    // Side rule colour: green when every correct answer of the question was
+    // hit, amber for a partial sweep, red when a wrong option got in, grey when
+    // the question was never answered.
+    var bar = result.correct
+      ? "bg-emerald-500"
+      : unanswered
+        ? "bg-slate-400"
+        : wrongPick
+          ? "bg-rose-500"
+          : "bg-amber-500";
+
+    // Status pill. A partial sweep is not a plain miss, and an unanswered
+    // question is not a wrong answer.
     var status = result.correct
       ? { label: "Aceptada", icon: "check", tone: "bg-emerald-100 text-emerald-700" }
-      : { label: unanswered ? "Sin responder" : "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700" };
-
-    // Side band: green when every correct answer of the question was hit, red
-    // when not a single one was, amber for a partial sweep in between.
-    var hits = q.answer.filter(function (letter) {
-      return result.selected.indexOf(letter) !== -1;
-    }).length;
-    var bar = result.correct ? "border-l-emerald-500" : hits === 0 ? "border-l-rose-500" : "border-l-amber-500";
+      : unanswered
+        ? { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600" }
+        : wrongPick
+          ? { label: "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700" }
+          : { label: "Parcial", icon: "alert", tone: "bg-amber-100 text-amber-700" };
 
     var optionRows = q.options.map(function (opt) {
-      var isCorrect = q.answer.includes(opt.letter);
-      var isWrongPick = result.selected.includes(opt.letter) && !isCorrect;
-      var tone = isCorrect
-        ? "border-emerald-200 bg-emerald-50/80"
-        : isWrongPick
-          ? "border-rose-200 bg-rose-50/80"
-          : "border-slate-100 bg-slate-50/60";
-      var badge = isCorrect
-        ? "bg-emerald-600 text-white"
-        : isWrongPick
-          ? "bg-rose-600 text-white"
-          : "bg-slate-200 text-slate-500";
+      var inKey = q.answer.includes(opt.letter);
+      var picked = result.selected.includes(opt.letter);
+      var state = OPTION_STATE[inKey && picked ? "hit" : inKey ? "missed" : picked ? "wrong" : "plain"];
       return el(
         "li",
-        { class: "flex items-start gap-2.5 rounded-xl border px-3 py-2 " + tone },
-        el("span", { class: "grid h-6 w-6 shrink-0 place-items-center rounded-md text-[11px] font-bold " + badge, text: opt.letter }),
-        el("span", { class: "flex-1 text-xs leading-relaxed " + (isCorrect || isWrongPick ? "text-slate-800" : "text-slate-500"), text: opt.text }),
-        isCorrect
-          ? R.icon("check", "mt-0.5 h-4 w-4 shrink-0 text-emerald-600")
-          : isWrongPick
-            ? R.icon("x", "mt-0.5 h-4 w-4 shrink-0 text-rose-600")
-            : null,
+        { class: "flex items-center gap-2.5 rounded-xl border px-3 py-2 " + state.tone },
+        el("span", { class: "grid h-6 w-6 shrink-0 place-items-center rounded-md text-[11px] font-bold " + state.badge, text: opt.letter }),
+        el("span", { class: "flex-1 text-xs leading-relaxed " + state.text, text: opt.text }),
+        state.icon ? R.icon(state.icon, "h-4 w-4 shrink-0 " + state.iconCls) : null,
       );
     });
 
+    // Answer comparison as tinted chips so "yours" vs "the key" scans at a
+    // glance; the "yours" chip borrows the status tone, so a partial sweep
+    // reads amber instead of red.
     var answerLine = el(
-      "p",
-      { class: "mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-slate-100 pt-3 text-xs" },
-      el("span", { class: "text-slate-500" }, [
-        "Tu respuesta: ",
-        el("span", { class: "font-semibold " + (unanswered ? "text-rose-600" : result.correct ? "text-emerald-700" : "text-rose-600"), text: unanswered ? "sin responder" : result.selected.join(", ") }),
+      "div",
+      { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-xs" },
+      el("span", { class: "inline-flex items-center gap-2" }, [
+        el("span", { class: "text-slate-500", text: "Tu respuesta" }),
+        el("span", {
+          class: "rounded-md px-2 py-1 font-bold " + status.tone,
+          text: unanswered ? "sin responder" : result.selected.join(", "),
+        }),
       ]),
-      el("span", { class: "text-slate-500" }, [
-        "Respuesta correcta: ",
-        el("span", { class: "font-semibold text-emerald-700", text: q.answer.join(", ") }),
+      el("span", { class: "inline-flex items-center gap-2" }, [
+        el("span", { class: "text-slate-500", text: "Respuesta correcta" }),
+        el("span", { class: "rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-700", text: q.answer.join(", ") }),
       ]),
     );
 
     return el(
       "article",
       {
-        class: "review-card rounded-2xl border border-l-4 border-slate-200 bg-white p-4 shadow-card " + bar,
+        class: "review-card relative rounded-2xl border border-slate-200 bg-white p-4 shadow-card",
       },
+      // Side rule sits on the content edge, so the card keeps one uniform 16px
+      // padding all around instead of the rule hugging the border. h-auto beats
+      // the preflight `hr { height: 0 }` so top/bottom can size it.
+      el("hr", { class: "absolute left-4 top-4 bottom-4 m-0 h-auto w-0.5 border-0 " + bar }),
+      // Content is inset past the rule; the answer rows shrink by the same 12px.
       el(
         "div",
-        { class: "flex flex-wrap items-center justify-between gap-3" },
+        { class: "pl-3" },
         el(
           "div",
-          { class: "flex flex-wrap items-center gap-2" },
-          el("span", { class: "grid h-7 w-7 place-items-center rounded-full " + status.tone, kids: [R.icon(status.icon, "h-4 w-4")] }),
-          el("span", { class: "text-xs font-bold uppercase tracking-wide " + (result.correct ? "text-emerald-700" : "text-rose-700"), text: status.label }),
-          el("span", { class: "rounded-md bg-brand-600 px-1.5 py-0.5 font-display text-[11px] font-bold text-white", text: q.id }),
-          el("span", { class: "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600", text: D.topicLabel(q.topic) }),
+          { class: "flex flex-wrap items-center justify-between gap-3" },
+          el(
+            "div",
+            { class: "flex flex-wrap items-center gap-2" },
+            el("span", {
+              class: "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide " + status.tone,
+              kids: [R.icon(status.icon, "h-3.5 w-3.5"), status.label],
+            }),
+            el("span", { class: "rounded-md bg-brand-600 px-1.5 py-0.5 font-display text-[11px] font-bold text-white", text: q.id }),
+            el("span", { class: "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600", text: D.topicLabel(q.topic) }),
+          ),
+          hint.button,
         ),
-        hint.button,
+        el("p", { class: "mt-3 text-sm font-medium leading-relaxed text-ink", text: q.text }),
+        el("ul", { class: "mt-3 space-y-2", kids: optionRows }),
+        answerLine,
+        hint.panel,
       ),
-      el("p", { class: "mt-3 text-sm font-medium leading-relaxed text-ink", text: q.text }),
-      el("ul", { class: "mt-3 space-y-1.5", kids: optionRows }),
-      answerLine,
-      hint.panel,
     );
   }
 
@@ -207,17 +233,24 @@
       "section",
       {
         class:
-          "relative overflow-hidden rounded-3xl border border-l-4 p-6 shadow-lift sm:p-8 animate-fade-up " +
+          "relative overflow-hidden rounded-3xl border p-6 shadow-lift sm:p-8 animate-fade-up " +
           (report.passed
-            ? "border-emerald-200 border-l-emerald-500 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70"
-            : "border-rose-200 border-l-rose-500 bg-gradient-to-br from-rose-50 via-white to-orange-50/60"),
+            ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70"
+            : "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/60"),
       },
+      // Same rule treatment as the cards: it sits on the content edge
+      // (p-6 / sm:p-8) so the padding stays uniform, and stays thin.
+      el("hr", {
+        class:
+          "absolute left-6 top-6 bottom-6 m-0 h-auto w-0.5 border-0 sm:left-8 sm:top-8 sm:bottom-8 " +
+          (report.passed ? "bg-emerald-500" : "bg-rose-500"),
+      }),
       el("div", {
         class: "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl " + (report.passed ? "bg-emerald-300/30" : "bg-rose-300/30"),
       }),
       el(
         "div",
-        { class: "relative flex flex-col items-center gap-6 sm:flex-row sm:gap-8" },
+        { class: "relative flex flex-col items-center gap-6 px-3 sm:flex-row sm:gap-8 sm:pr-0" },
         el(
           "div",
           { class: "relative h-36 w-36 shrink-0" },

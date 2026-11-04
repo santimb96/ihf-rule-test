@@ -62,8 +62,18 @@
       report: state.report,
       config: state.config,
       onDownload: function () {
-        var name = global.IHFPdf.generate(state.report, state.config);
-        if (name) R.toast("PDF generado: " + name);
+        // jsPDF (366 KB) is fetched on demand so it stays out of the initial
+        // payload; the namespace exposes the same `jsPDF` named export the
+        // UMD global did, so pdf.js needs no change.
+        import("jspdf")
+          .then(function (mod) {
+            global.jspdf = mod;
+            var name = global.IHFPdf.generate(state.report, state.config);
+            if (name) R.toast("PDF generado: " + name);
+          })
+          .catch(function () {
+            R.toast("No se pudo cargar la librería PDF. Revisa tu conexión.");
+          });
       },
       onRetry: function () {
         startQuiz(state.config);

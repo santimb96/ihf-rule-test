@@ -130,7 +130,7 @@
 
     function optionClass(on) {
       return (
-        "option flex w-full items-start gap-3 rounded-2xl border px-4 py-3.5 text-left " +
+        "option flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left " +
         (on
           ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500"
           : "border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50")

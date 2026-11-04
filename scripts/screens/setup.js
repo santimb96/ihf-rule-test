@@ -70,6 +70,10 @@
         }
         var hint = enabled ? "≥75% de respuestas" : "no hay preguntas suficientes";
         if (entry.hint.textContent !== hint) entry.hint.textContent = hint;
+        // New: show notice when pool has < 5 questions but test proceeds
+        if (available < entry.size && entry.size === 5 && available >= 1) {
+          entry.hint.textContent = "solo " + available + " disponibles";
+        }
       });
 
       var label = available + (available === 1 ? " pregunta disponible" : " preguntas disponibles");

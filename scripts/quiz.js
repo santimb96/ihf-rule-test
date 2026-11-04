@@ -30,9 +30,9 @@
     var size = options.size;
     var rng = options.rng || defaultRng;
 
-    if (pool.length < size) {
-      throw new Error("pool has " + pool.length + " questions, " + size + " requested");
-    }
+    // Allow test to proceed with fewer questions than requested;
+    // use the actual pool size when it is smaller.
+    if (pool.length < size) size = pool.length;
 
     var items = shuffle(pool, rng).slice(0, size);
     var selected = items.map(function () {

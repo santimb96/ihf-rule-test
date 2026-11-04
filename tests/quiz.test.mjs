@@ -24,8 +24,10 @@ test("createQuiz picks the requested number of distinct questions", () => {
   for (const item of quiz.items) assert.ok(pool.includes(item));
 });
 
-test("createQuiz refuses sizes the pool cannot cover", () => {
-  assert.throws(() => createQuiz({ pool: pool.slice(0, 4), size: 5 }));
+test("createQuiz adapts size when pool is smaller", () => {
+  const quiz = createQuiz({ pool: pool.slice(0, 4), size: 5 });
+  assert.equal(quiz.items.length, 4);
+  for (const item of quiz.items) assert.ok(pool.includes(item));
 });
 
 test("answers are stored per question and grading produces a report", () => {

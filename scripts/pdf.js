@@ -531,7 +531,11 @@
       });
 
       var color = row.kind === "correct" ? C.greenDark : row.kind === "wrong" ? C.redDark : C.slate;
-      var textTop = cy + (row.h - row.lines.length * row.step) / 2;
+      // linesBlock anchors the alphabetic baseline, which leaves the em box
+      // above the line-box centre; nudge by half a leading so the glyphs sit
+      // on the badge centre instead of a millimetre above it.
+      var em = TYPE.body.size * MM_PT;
+      var textTop = cy + (row.h - row.lines.length * row.step) / 2 + (row.step - em) / 2;
       linesBlock(row.lines, IX + 10.5, textTop, TYPE.body.size, row.style, color, row.step);
     }
 
