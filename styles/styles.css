@@ -28,8 +28,10 @@ html.dark .text-ink {
 
 html.dark .text-slate-600,
 html.dark .text-slate-500,
-html.dark .text-slate-700 {
-  color: #9ca3af !important;
+html.dark .text-slate-700,
+html.dark footer p,
+html.dark footer a {
+  color: #cbd5e1 !important;
 }
 
 html.dark .border-slate-200,
@@ -98,6 +100,58 @@ html.dark .size-active .text-slate-500 {
 ::selection {
   background: #dbe6ff;
   color: #0b1220;
+}
+
+html.dark button[data-action="hint"] {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #fbbf24 !important;
+}
+
+html.dark button[data-action="hint"]:hover {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+html.dark .hint-panel .rounded-2xl {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  background: linear-gradient(to bottom right, rgba(30, 27, 20, 0.9), rgba(17, 24, 39, 0.95)) !important;
+}
+
+html.dark .hint-panel .text-amber-600 {
+  color: #fbbf24 !important;
+}
+
+html.dark .hint-panel .border-amber-200,
+html.dark .hint-panel .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark .hint-panel .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #78350f !important;
+}
+
+html.dark .hint-panel .text-amber-900 {
+  color: #78350f !important;
+}
+
+html.dark .hint-panel a.bg-white {
+  background-color: #1f2937 !important;
+  color: #fbbf24 !important;
+}
+
+html.dark .hint-panel a.bg-white:hover {
+  background-color: #374151 !important;
+}
+
+html.dark .hint-panel .text-slate-600 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .hint-panel .text-slate-500 {
+  color: #cbd5e1 !important;
 }
 
 /* --- collapsible hint --------------------------------------------------- */

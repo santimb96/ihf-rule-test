@@ -107,6 +107,11 @@
             panel.classList.toggle("open", open);
             button.setAttribute("aria-expanded", String(open));
             label.textContent = open ? "Ocultar pista" : "Ver pista";
+            if (open) {
+              setTimeout(function () {
+                panel.scrollIntoView({ behavior: "smooth", block: "center" });
+              }, 120);
+            }
           },
         },
         kids: [R.icon("bulb", "h-4 w-4"), label],
