@@ -67,6 +67,48 @@
     var quiz = ctx.quiz;
     var total = quiz.items.length;
     var index = 0;
+    var startTime = Date.now();
+    var timerInterval = null;
+
+    var PILL_CLASS = "h-9 min-w-[36px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
+    var fill = el("div", { class: "progress-fill h-full rounded-full", style: { width: "0%" } });
+    var counter = el("span", { class: "font-display text-sm font-semibold text-ink" });
+    var answeredLabel = el("span", { class: "text-xs font-medium text-slate-500" });
+    var timerTextSpan = el("span", { class: "font-display font-semibold tracking-normal text-xs" });
+    var timerLabel = el("span", { 
+      class: "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200",
+      kids: [
+        R.icon("clock", "h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400"),
+        timerTextSpan
+      ]
+    });
+    var pills = el("div", { class: "flex flex-wrap gap-1.5" });
+    var cardHost = el("div", { class: "mt-4" });
+    var prevButton;
+    var nextButton;
+    var nextLabel;
+    var pillNodes = [];
+    var pillClasses = [];
+    var pillCurrent = [];
+
+    function updateTimer() {
+      var elapsed = Math.floor((Date.now() - startTime) / 1000);
+      if (elapsed > 3599) elapsed = 3599; // Cap at 59:59
+      var mins = Math.floor(elapsed / 60);
+      var secs = elapsed % 60;
+      var text = (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
+      if (timerTextSpan.textContent !== text) timerTextSpan.textContent = text;
+    }
+
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    function clearTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
 
     var PILL_CLASS = "h-9 min-w-[36px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
     var fill = el("div", { class: "progress-fill h-full rounded-full", style: { width: "0%" } });
@@ -215,6 +257,7 @@
     }
 
     function finish() {
+      clearTimer();
       var pending = total - answeredCount();
       if (pending > 0) {
         openConfirm({
@@ -232,6 +275,7 @@
     }
 
     function exit() {
+      clearTimer();
       if (answeredCount() > 0) {
         openConfirm({
           title: "Salir del test",
@@ -263,7 +307,7 @@
             kids: [R.icon("close", "h-4 w-4"), "Salir"],
           },
         ),
-        counter,
+        el("div", { class: "flex items-center gap-3" }, timerLabel, counter),
         answeredLabel,
       ),
       el("div", { class: "mt-3 h-2 overflow-hidden rounded-full bg-slate-100" }, fill),

@@ -9,7 +9,7 @@
   var D = global.IHFData;
   var Screens = global.IHFScreens;
 
-  var state = { config: null, quiz: null, report: null };
+  var state = { config: null, quiz: null, report: null, startTime: null, elapsedTime: 0 };
 
   function screenNode(id) {
     return document.getElementById(id);
@@ -45,10 +45,14 @@
   function startQuiz(config) {
     var pool = D.pool(config.topics);
     state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: config.size });
+    state.startTime = Date.now();
+    state.elapsedTime = 0;
     R.showScreen("screen-quiz");
     Screens.quiz.mount(screenNode("screen-quiz"), {
       quiz: state.quiz,
       onFinish: function (report) {
+        state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
+        report.elapsedTime = state.elapsedTime;
         state.report = report;
         showResults();
       },

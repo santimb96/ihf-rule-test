@@ -312,8 +312,9 @@
         size: TYPE.h2.size,
         color: C.navy,
       });
+      var timeStr = report.elapsedTime !== undefined ? "  |  Tiempo: " + Math.floor(report.elapsedTime / 60) + "m " + (report.elapsedTime % 60) + "s" : "";
       txt(
-        report.total + " preguntas  |  Mínimo para aprobar: " + report.required + " respuestas (75%)",
+        report.total + " preguntas  |  Mínimo para aprobar: " + report.required + " respuestas (75%)" + timeStr,
         rightX,
         y + 18.5,
         { size: TYPE.small.size, color: C.slate },

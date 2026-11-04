@@ -273,7 +273,13 @@
           el(
             "div",
             { class: "mt-4 flex flex-wrap justify-center gap-2 sm:justify-start" },
-            [config.size + " preguntas", topicSummary, "mín. " + report.required + " respuestas", new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })].map(function (text) {
+            [
+              config.size + " preguntas",
+              topicSummary,
+              "mín. " + report.required + " respuestas",
+              report.elapsedTime !== undefined ? "Tiempo: " + Math.floor(report.elapsedTime / 60) + "m " + (report.elapsedTime % 60) + "s" : null,
+              new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }),
+            ].filter(Boolean).map(function (text) {
               return el("span", { class: "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600", text: text });
             }),
           ),
@@ -306,10 +312,10 @@
                 "button",
                 {
                   type: "button",
-                  class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 active:translate-y-px",
+                  class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 active:translate-y-px",
                   "data-action": "retry-failed",
                   on: { click: ctx.onRetryFailed },
-                  kids: [R.icon("alert", "h-4 w-4"), "Repetir solo fallos (" + report.results.filter(function (r) { return !r.correct; }).length + ")"],
+                  kids: [R.icon("x", "h-4 w-4"), "Repetir solo fallos (" + report.results.filter(function (r) { return !r.correct; }).length + ")"],
                 },
               )
             : null,
