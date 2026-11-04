@@ -260,9 +260,16 @@
       clearTimer();
       var pending = total - answeredCount();
       if (pending > 0) {
+        var unansweredList = [];
+        for (var i = 0; i < total; i++) {
+          if (quiz.selected(i).length === 0) {
+            unansweredList.push(i + 1);
+          }
+        }
+        var listStr = unansweredList.slice(0, 5).join(", ") + (unansweredList.length > 5 ? "..." : "");
         openConfirm({
           title: "Faltan preguntas por responder",
-          message: "Tienes " + pending + (pending === 1 ? " pregunta sin responder" : " preguntas sin responder") + ". Puedes terminar igualmente, pero se contarán como falladas.",
+          message: "Tienes " + pending + (pending === 1 ? " pregunta sin responder" : " preguntas sin responder") + " (" + listStr + "). Puedes terminar igualmente, pero se contarán como falladas.",
           confirmText: "Terminar igualmente",
           danger: true,
           onConfirm: function () {
