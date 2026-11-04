@@ -400,7 +400,7 @@
         })
         .join("  |  ");
       var tone = toneFor(result.correct);
-      var pillText = result.correct ? "ACEPTADA" : result.selected.length ? "FALLADA" : "SIN RESPONDER";
+      var pillText = result.correct ? "ACERTADA" : result.selected.length ? "FALLADA" : "SIN RESPONDER";
 
       var stmtStep = lh(TYPE.body.size, 1.4);
       var stmtLines = wrap(q.text, "bold", TYPE.body.size, IW);
