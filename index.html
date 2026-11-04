@@ -7,79 +7,18 @@
   <meta name="theme-color" content="#ffffff">
   <title>IHF Rules Trainer · Catálogo de preguntas de Reglas de Juego</title>
   <meta name="description" content="Plataforma de estudio local con los catálogos de preguntas de las Reglas de Juego de la IHF: filtros por tema, tests de 5/10/20/30 preguntas, pistas con directrices e informe PDF.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.tailwindcss.com">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            display: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            ink: '#0b1220',
-            brand: {
-              50: '#eef4ff', 100: '#dbe6ff', 200: '#bed0ff', 300: '#93b0ff',
-              400: '#6086ff', 500: '#3b5eff', 600: '#2542e6', 700: '#1e33b8',
-              800: '#1e2f93', 900: '#1e2c74', 950: '#141c4a',
-            },
-            accent: {
-              300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706',
-            },
-          },
-          keyframes: {
-            'fade-up': { '0%': { opacity: '0', transform: 'translateY(14px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
-            'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            'pop-in': { '0%': { opacity: '0', transform: 'scale(.94)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
-            'slide-left': { '0%': { opacity: '0', transform: 'translateX(24px)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
-            'ring-pop': { '0%': { strokeDashoffset: 'var(--ring-offset)' } },
-            shimmer: { '100%': { transform: 'translateX(100%)' } },
-          },
-          animation: {
-            'fade-up': 'fade-up .45s cubic-bezier(.22,.61,.36,1) both',
-            'fade-in': 'fade-in .4s ease both',
-            'pop-in': 'pop-in .35s cubic-bezier(.22,.61,.36,1) both',
-            'slide-left': 'slide-left .4s cubic-bezier(.22,.61,.36,1) both',
-            shimmer: 'shimmer 1.6s infinite',
-          },
-          boxShadow: {
-            card: '0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.18)',
-            lift: '0 2px 4px rgba(15,23,42,.05), 0 18px 40px -18px rgba(30,64,175,.35)',
-          },
-        },
-      },
-    };
-  </script>
+  <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="styles/styles.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script defer src="data/questions.js"></script>
-  <script defer src="scripts/scoring.js"></script>
-  <script defer src="scripts/quiz.js"></script>
-  <script defer src="scripts/data.js"></script>
-  <script defer src="scripts/render.js"></script>
-  <script defer src="scripts/hint.js"></script>
-  <script defer src="scripts/screens/setup.js"></script>
-  <script defer src="scripts/screens/quiz.js"></script>
-  <script defer src="scripts/screens/results.js"></script>
-  <script defer src="scripts/pdf.js"></script>
-  <script defer src="scripts/main.js"></script>
+  <script type="module" src="./scripts/app.js"></script>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
   <div id="app" class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-md">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div class="flex items-center gap-3">
-          <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-lift">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M3.6 9.5c5.2 1.2 10.6 1.2 16.8 0M3.6 14.5c5.2-1.2 10.6-1.2 16.8 0M12 3c-2.4 5.6-2.4 12.4 0 18M12 3c2.4 5.6 2.4 12.4 0 18"></path>
-            </svg>
-          </span>
+          <div class="rounded-xl bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 h-10 w-10 shadow-lift">
+            <img src="assets/logo-handball-white.png" alt="" width="40" height="40" class="h-10 w-10">
+          </div>
           <div class="leading-tight">
             <p class="font-display text-base font-semibold tracking-tight text-ink">IHF Rules Trainer</p>
             <p class="text-xs text-slate-500">Catálogo oficial de preguntas · Ed. julio 2025</p>
@@ -96,13 +35,16 @@
     </main>
 
     <footer class="border-t border-slate-200/70 bg-white/70">
-      <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <p>Fuentes: Catálogo de preguntas IHF (ES) + Catalogue of Rules Questions &amp; Answers (EN) + Reglas de Juego (1 jul 2025).</p>
-        <p class="flex gap-3">
-          <a class="link" href="documents/CATALOGO%20RULE%20Test%202025_Ed.%20Ene-2026_def.pdf" target="_blank" rel="noopener">Catálogo ES</a>
-          <a class="link" href="documents/IHF%20Catalogue%20of%20Rules%20Questions_Answers_010725_EN_final_4.pdf" target="_blank" rel="noopener">Answer key EN</a>
-          <a class="link" href="documents/Reglas%20de%20Juego%20(Septiembre%202025)%20Web.pdf" target="_blank" rel="noopener">Reglas de Juego</a>
-        </p>
+      <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div class="flex flex-col gap-2 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>Fuentes: Catálogo de preguntas IHF (ES) + Catalogue of Rules Questions &amp; Answers (EN) + Reglas de Juego (1 jul 2025).</p>
+          <p class="flex gap-3">
+            <a class="link" href="documents/CATALOGO%20RULE%20Test%202025_Ed.%20Ene-2026_def.pdf" target="_blank" rel="noopener">Catálogo ES</a>
+            <a class="link" href="documents/IHF%20Catalogue%20of%20Rules%20Questions_Answers_010725_EN_final_4.pdf" target="_blank" rel="noopener">Answer key EN</a>
+            <a class="link" href="documents/Reglas%20de%20Juego%20(Septiembre%202025)%20Web.pdf" target="_blank" rel="noopener">Reglas de Juego</a>
+          </p>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">Web creada y diseñada por <a class="link" href="https://smartinezdev.com" target="_blank" rel="noopener">Santi Martínez</a> - Árbitro territorial de la FBHB (España).</p>
       </div>
     </footer>
   </div>
