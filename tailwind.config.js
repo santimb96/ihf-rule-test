@@ -5,6 +5,7 @@
  * names kept as fallbacks.
  */
 module.exports = {
+  darkMode: "class",
   content: ["./index.html", "./scripts/**/*.js"],
   theme: {
     extend: {

@@ -22,13 +22,6 @@ html.dark .bg-white {
   background-color: #111827 !important;
 }
 
-html.dark header .bg-white {
-  background-color: transparent !important;
-  color: inherit !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-}
-
 html.dark .text-ink {
   color: #f9fafb !important;
 }
