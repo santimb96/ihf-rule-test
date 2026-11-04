@@ -6,15 +6,20 @@ import { defineConfig } from "vite";
  * runtime (footer links and the hint deep links in scripts/data.js), so the
  * build has to ship the folder verbatim instead of fingerprinting it.
  */
-function copyDocuments() {
+function copyAssetsAndDocs() {
   return {
-    name: "copy-documents",
+    name: "copy-assets-and-docs",
     closeBundle() {
-      fs.cpSync("documents", "dist/documents", { recursive: true });
+      if (fs.existsSync("assets")) {
+        fs.cpSync("assets", "dist/assets", { recursive: true });
+      }
+      if (fs.existsSync("documents")) {
+        fs.cpSync("documents", "dist/documents", { recursive: true });
+      }
     },
   };
 }
 
 export default defineConfig({
-  plugins: [copyDocuments()],
+  plugins: [copyAssetsAndDocs()],
 });
