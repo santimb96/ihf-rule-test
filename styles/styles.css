@@ -2,6 +2,7 @@
 
 :root {
   --ring-offset: 339.292px; /* 2 * PI * 54, set by the results ring */
+  color-scheme: only light;
 }
 
 html {
