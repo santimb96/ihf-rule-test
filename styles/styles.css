@@ -2,21 +2,82 @@
 
 :root {
   --ring-offset: 339.292px; /* 2 * PI * 54, set by the results ring */
-  color-scheme: only light;
+  color-scheme: light dark;
 }
 
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+html.dark {
+  color-scheme: dark;
 }
 
-body {
-  background-color: #f8fafc;
+html.dark body {
+  background-color: #030712;
   background-image:
-    radial-gradient(900px 480px at 12% -8%, rgba(59, 94, 255, 0.14), transparent 60%),
-    radial-gradient(760px 420px at 96% 4%, rgba(245, 158, 11, 0.12), transparent 55%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  background-attachment: fixed;
+    radial-gradient(900px 480px at 12% -8%, rgba(59, 94, 255, 0.12), transparent 60%),
+    radial-gradient(760px 420px at 96% 4%, rgba(245, 158, 11, 0.08), transparent 55%),
+    linear-gradient(180deg, #030712 0%, #0b0f19 100%);
+  color: #f1f5f9;
+}
+
+html.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+html.dark header .bg-white {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.dark .text-ink {
+  color: #f9fafb !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-700 {
+  color: #9ca3af !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-100 {
+  border-color: #1f2937 !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+  background-color: #1f2937 !important;
+}
+
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #374151 !important;
+}
+
+html.dark .hover\:border-brand-300:hover {
+  border-color: #60a5fa !important;
+}
+
+html.dark .bg-brand-50\/80 {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+html.dark .border-brand-500 {
+  border-color: #3b82f6 !important;
+}
+
+html.dark button.size-active {
+  border-color: #3b82f6 !important;
+  background: linear-gradient(180deg, rgba(30, 58, 138, 0.4) 0%, #111827 100%) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px -14px rgba(59, 130, 246, 0.5) !important;
+}
+
+html.dark .size-active .font-display,
+html.dark .size-active .text-ink {
+  color: #60a5fa !important;
+}
+
+html.dark .size-active .text-slate-500 {
+  color: #93c5fd !important;
 }
 
 /* Fixed backgrounds repaint on every scroll frame; let small screens scroll it. */

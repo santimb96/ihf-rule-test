@@ -25,7 +25,7 @@
       R.append(
         host,
         R.el("span", {
-          class: "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600",
+          class: "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300",
           text: text,
         }),
       );
@@ -101,6 +101,14 @@
     }
     renderHeaderStats();
     showSetup();
+
+    var toggle = document.getElementById("theme-toggle");
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        var isDark = document.documentElement.classList.toggle("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+      });
+    }
   }
 
   document.addEventListener("DOMContentLoaded", boot);
