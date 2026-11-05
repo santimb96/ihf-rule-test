@@ -298,7 +298,69 @@
       startButton,
     );
 
-    R.mount(root, [hero, topicsCard, sizesCard, summary]);
+    var gitHubCard = el(
+      "section",
+      { class: "relative mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
+      R.icon("github", "pointer-events-none absolute -right-6 -bottom-15 hidden h-52 w-52 text-brand-600/10 sm:block"),
+      el(
+        "div",
+        { class: "relative" },
+        el(
+          "div",
+          { class: "flex items-center gap-3" },
+          R.icon("github", "h-10 w-10 shrink-0 text-ink"),
+          el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Más información" }),
+        ),
+        el("p", {
+          class: "mt-3 max-w-2xl text-sm leading-relaxed text-slate-500",
+          text: "Esta web es una herramienta de estudio que no está vinculada con ningún organismo oficial. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto y compartirlo si te ha sido de utilidad!",
+        }),
+        el(
+          "div",
+          { class: "mt-4 flex flex-wrap items-center gap-3" },
+          el(
+            "a",
+            {
+              href: "https://github.com/santimb96/non-official-ihf-rule-test",
+              target: "_blank",
+              rel: "noopener",
+              class:
+                "group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 hover:from-brand-500 hover:to-brand-400 active:translate-y-0 active:brightness-95",
+              kids: [
+                R.icon("github", "h-5 w-5"),
+                "Ver en GitHub",
+                el("svg", {
+                  class: "h-4 w-4 opacity-80 transition group-hover:opacity-100",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  stroke: "currentColor",
+                  "stroke-width": "2",
+                  "stroke-linecap": "round",
+                  "stroke-linejoin": "round",
+                  "aria-hidden": "true",
+                  kids: [
+                    el("path", {
+                      d: "M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25",
+                    }),
+                  ],
+                }),
+              ],
+            },
+          ),
+          el("a", {
+            href: "https://github.com/santimb96/non-official-ihf-rule-test/issues",
+            target: "_blank",
+            rel: "noopener",
+            "aria-label": "Abrir una issue en santimb96/non-official-ihf-rule-test en GitHub",
+            class:
+              "inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-accent-400 hover:bg-accent-300/20 hover:text-accent-600 active:translate-y-px",
+            kids: [R.icon("issue", "h-5 w-5 shrink-0"), "Abrir una issue"],
+          }),
+        ),
+      ),
+    );
+
+    R.mount(root, [hero, topicsCard, sizesCard, summary, gitHubCard]);
     sync();
   }
 

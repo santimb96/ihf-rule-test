@@ -10,7 +10,7 @@
 
   var ICON_NAMES = [
     "check", "alert", "dash", "x", "bulb", "left", "right",
-    "flag", "download", "refresh", "grid", "close", "doc", "clock"
+    "flag", "download", "refresh", "grid", "close", "doc", "clock", "github", "issue"
   ];
 
   ICON_NAMES.forEach(function (name) {
