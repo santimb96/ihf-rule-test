@@ -1,5 +1,24 @@
 /* Custom layer on top of Tailwind: theme surfaces, motion and small components. */
 
+/* Sticky-footer shell. On mobile browsers `100vh` resolves to the large
+   viewport (browser chrome hidden), so a 100vh page overflows the visible
+   area and the footer ends up behind the URL bar. `svh` measures the
+   smallest viewport instead, so the shell always fits the visible area.
+   The override sits inside @supports so browsers without `svh` keep the
+   previous `100vh` behaviour; a plain duplicate declaration would not do,
+   because the CSS minifier folds it into the `100svh` one. */
+body,
+#app {
+  min-height: 100vh;
+}
+
+@supports (min-height: 100svh) {
+  body,
+  #app {
+    min-height: 100svh;
+  }
+}
+
 :root {
   --ring-offset: 339.292px; /* 2 * PI * 54, set by the results ring */
   color-scheme: light dark;
