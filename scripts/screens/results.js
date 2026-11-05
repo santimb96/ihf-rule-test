@@ -262,7 +262,7 @@
             class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " + (report.passed ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"),
             kids: [R.icon(report.passed ? "check" : "x", "h-3.5 w-3.5"), report.passed ? "Aprobado" : "No aprobado"],
           }),
-          el("h1", { class: "mt-3 font-display text-2xl font-bold text-ink text-balance sm:text-3xl", text: report.passed ? "¡Enhorabuena, has aprobado!" : "Esta vez no ha sido" }),
+          el("h1", { class: "mt-3 font-display text-2xl font-bold text-ink text-balance sm:text-3xl", text: report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!" }),
           el("p", { class: "mt-2 text-sm leading-relaxed text-slate-600" }, [
             "Has acertado ",
             el("strong", { class: "font-semibold text-ink", text: report.score + " de " + report.totalAnswers + " respuestas" }),
