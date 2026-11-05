@@ -25,28 +25,11 @@
     return R.el("span", { class: cls, text: chip.label });
   }
 
-  function getGuidelineText(question) {
-    if (!global.IHF_RULES || !global.IHF_RULES.directrices) return null;
-    var chips = D.chips(question);
-    for (var i = 0; i < chips.length; i++) {
-      var m = chips[i].raw.match(/(\d{1,2})[:.](\d+)/);
-      if (m) {
-        var key = m[1] + ":" + m[2];
-        var dirs = global.IHF_RULES.directrices[key];
-        if (dirs && dirs.length > 0) {
-          return dirs[0].text;
-        }
-      }
-    }
-    return null;
-  }
-
   function create(question) {
     var chips = D.chips(question);
     var firstLink = chips.filter(function (c) {
       return c.page;
     })[0];
-    var guidelineText = getGuidelineText(question);
 
     var label = R.el("span", { text: "Ver pista" });
     var open = false;
@@ -79,12 +62,6 @@
                 })
               : null,
           ),
-          guidelineText
-            ? R.el("p", {
-                class: "mt-3 text-xs italic leading-relaxed text-slate-600",
-                text: "“" + guidelineText + "”",
-              })
-            : null,
           R.el("p", {
             class: "mt-2 text-xs leading-relaxed text-slate-500",
             text: "El catálogo de respuestas cita estas directrices como fundamento de la respuesta correcta.",
