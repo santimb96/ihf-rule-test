@@ -28,10 +28,15 @@ html.dark .text-ink {
 
 html.dark .text-slate-600,
 html.dark .text-slate-500,
-html.dark .text-slate-700,
+html.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+/* Footer text keeps the muted tone, but without !important so link hover
+   utilities (dark:hover:text-brand-300) can still win. */
 html.dark footer p,
 html.dark footer a {
-  color: #cbd5e1 !important;
+  color: #cbd5e1;
 }
 
 html.dark .border-slate-200,
