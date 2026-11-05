@@ -4,6 +4,7 @@
 .opencode
 .claude
 .devin
+.impeccable
 
 # build + dependencies
 node_modules/
