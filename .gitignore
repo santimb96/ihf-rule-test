@@ -1,6 +1,9 @@
 /tools
 /odd
 .atl
+.opencode
+.claude
+.devin
 
 # build + dependencies
 node_modules/
