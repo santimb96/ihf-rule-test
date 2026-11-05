@@ -15,40 +15,29 @@
   // Option row states in the review list. "missed" is a correct answer the user
   // never picked: amber with an alert so it never reads as a hit.
   var OPTION_STATE = {
-    hit: { tone: "border-emerald-200 bg-emerald-50/80", badge: "bg-emerald-600 text-white", text: "text-slate-800", icon: "check", iconCls: "text-emerald-600" },
-    missed: { tone: "border-amber-200 bg-amber-50/80", badge: "bg-amber-500 text-white", text: "text-slate-800", icon: "alert", iconCls: "text-amber-600" },
-    wrong: { tone: "border-rose-200 bg-rose-50/80", badge: "bg-rose-600 text-white", text: "text-slate-800", icon: "x", iconCls: "text-rose-600" },
-    plain: { tone: "border-slate-100 bg-slate-50/60", badge: "bg-slate-200 text-slate-500", text: "text-slate-500", icon: null, iconCls: null },
+    hit: { tone: "border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40", badge: "bg-emerald-700 text-white", text: "text-slate-800 dark:text-emerald-50", icon: "check", iconCls: "text-emerald-600 dark:text-emerald-300" },
+    missed: { tone: "border-amber-200 bg-amber-50/80 dark:border-amber-800/70 dark:bg-amber-950/40", badge: "bg-amber-400 text-amber-950", text: "text-slate-800 dark:text-amber-50", icon: "alert", iconCls: "text-amber-700 dark:text-amber-300" },
+    wrong: { tone: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40", badge: "bg-rose-700 text-white", text: "text-slate-800 dark:text-rose-50", icon: "x", iconCls: "text-rose-600 dark:text-rose-300" },
+    plain: { tone: "border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-800/40", badge: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-200", text: "text-slate-500 dark:text-slate-300", icon: null, iconCls: null },
   };
 
   function reviewCard(result) {
     var q = result.question;
-    var hint = Hint.create(q);
+    var hint = Hint.create(q, { subtle: true });
     var unanswered = result.selected.length === 0;
     var wrongPick = result.selected.some(function (letter) {
       return q.answer.indexOf(letter) === -1;
     });
 
-    // Side rule colour: green when every correct answer of the question was
-    // hit, amber for a partial sweep, red when a wrong option got in, grey when
-    // the question was never answered.
-    var bar = result.correct
-      ? "bg-emerald-500"
-      : unanswered
-        ? "bg-slate-400"
-        : wrongPick
-          ? "bg-rose-500"
-          : "bg-amber-500";
-
     // Status pill. A partial sweep is not a plain miss, and an unanswered
     // question is not a wrong answer.
     var status = result.correct
-      ? { label: "Acertada", icon: "check", tone: "bg-emerald-100 text-emerald-700" }
+      ? { label: "Acertada", icon: "check", tone: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" }
       : unanswered
-        ? { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600" }
+        ? { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200" }
         : wrongPick
-          ? { label: "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700" }
-          : { label: "Parcial", icon: "alert", tone: "bg-amber-100 text-amber-700" };
+          ? { label: "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" }
+          : { label: "Parcial", icon: "alert", tone: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" };
 
     var optionRows = q.options.map(function (opt) {
       var inKey = q.answer.includes(opt.letter);
@@ -68,7 +57,7 @@
     // reads amber instead of red.
     var answerLine = el(
       "div",
-      { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-xs" },
+      { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800" },
       el("span", { class: "inline-flex items-center gap-2" }, [
         el("span", { class: "text-slate-500", text: "Tu respuesta" }),
         el("span", {
@@ -78,14 +67,14 @@
       ]),
       el("span", { class: "inline-flex items-center gap-2" }, [
         el("span", { class: "text-slate-500", text: "Respuesta correcta" }),
-        el("span", { class: "rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-700", text: q.answer.join(", ") }),
+        el("span", { class: "rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300", text: q.answer.join(", ") }),
       ]),
     );
 
     return el(
       "article",
       {
-        class: "review-card relative rounded-2xl border border-slate-200 bg-white p-4 shadow-card",
+        class: "review-card relative rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800",
       },
       el(
         "div",
@@ -101,11 +90,11 @@
               kids: [R.icon(status.icon, "h-3.5 w-3.5"), status.label],
             }),
             el("span", { class: "rounded-md bg-brand-600 px-1.5 py-0.5 font-display text-[11px] font-bold text-white", text: q.id }),
-            el("span", { class: "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600", text: D.topicLabel(q.topic) }),
+            el("span", { class: "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300", text: D.topicLabel(q.topic) }),
           ),
           hint.button,
         ),
-        el("p", { class: "mt-3 text-sm font-medium leading-relaxed text-ink", text: q.text }),
+        el("p", { class: "mt-3 max-w-[70ch] text-sm font-medium leading-relaxed text-ink", text: q.text }),
         el("ul", { class: "mt-3 space-y-2", kids: optionRows }),
         answerLine,
         hint.panel,
@@ -116,10 +105,14 @@
   function mount(root, ctx) {
     var report = ctx.report;
     var config = ctx.config;
-    var filter = "all";
+    var failedCount = report.results.filter(function (r) {
+      return !r.correct;
+    }).length;
+    // A failed attempt opens on its misses: reviewing them is the study moment.
+    var filter = report.passed ? "all" : "failed";
 
     var ringStroke = el("circle", {
-      class: "ring-progress",
+      class: "ring-progress " + (report.passed ? "stroke-emerald-600 dark:stroke-emerald-400" : "stroke-rose-600 dark:stroke-rose-400"),
       cx: "60",
       cy: "60",
       r: "54",
@@ -128,7 +121,6 @@
       "stroke-linecap": "round",
       "stroke-dasharray": String(CIRCUMFERENCE),
       "stroke-dashoffset": String(CIRCUMFERENCE),
-      stroke: report.passed ? "#059669" : "#e11d48",
     });
 
     var listHost = el("div", { class: "review-list space-y-3" });
@@ -184,7 +176,7 @@
     function tabClass(active) {
       return (
         "rounded-xl px-4 py-2 text-sm font-semibold transition " +
-        (active ? "bg-brand-600 text-white shadow-card" : "text-slate-600 hover:bg-slate-100")
+        (active ? "bg-brand-600 text-white shadow-card" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800")
       );
     }
 
@@ -224,17 +216,89 @@
               .join(", ")
           : topicIds.length + " temas seleccionados";
 
+    // Fail: studying the misses is the primary action. Pass: the record (PDF) is.
+    var PRIMARY_CLASS =
+      "group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0";
+    var SECONDARY_CLASS =
+      "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-wait disabled:opacity-60";
+    var DANGER_CLASS =
+      "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 active:translate-y-px dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60";
+
+    // Download owns a busy state: the PDF generator is fetched on demand, so the
+    // button reports the wait and returns a retry when the fetch fails.
+    var downloadLabel = el("span", { text: "Descargar PDF" });
+    var downloadButton = el(
+      "button",
+      {
+        type: "button",
+        class: report.passed ? PRIMARY_CLASS : SECONDARY_CLASS,
+        "data-action": "download",
+        on: {
+          click: function () {
+            if (downloadButton.disabled) return;
+            downloadButton.disabled = true;
+            downloadButton.setAttribute("aria-busy", "true");
+            downloadLabel.textContent = "Generando PDF…";
+            ctx.onDownload(function restore() {
+              downloadButton.disabled = false;
+              downloadButton.removeAttribute("aria-busy");
+              downloadLabel.textContent = "Descargar PDF";
+            });
+          },
+        },
+        kids: [R.icon("download", "h-4 w-4"), downloadLabel],
+      },
+    );
+
+    var retryButton = el(
+      "button",
+      {
+        type: "button",
+        class: SECONDARY_CLASS,
+        "data-action": "retry",
+        on: { click: ctx.onRetry },
+        kids: [R.icon("refresh", "h-4 w-4"), "Repetir test"],
+      },
+    );
+
+    var newButton = el(
+      "button",
+      {
+        type: "button",
+        class: SECONDARY_CLASS,
+        "data-action": "new",
+        on: { click: ctx.onNew },
+        kids: [R.icon("grid", "h-4 w-4"), "Nuevo test"],
+      },
+    );
+
+    var retryFailedButton = failedCount
+      ? el(
+          "button",
+          {
+            type: "button",
+            class: report.passed ? DANGER_CLASS : PRIMARY_CLASS,
+            "data-action": "retry-failed",
+            on: { click: ctx.onRetryFailed },
+            kids: [
+              R.icon("refresh", "h-4 w-4"),
+              failedCount === 1 ? "Repetir el fallo" : "Repetir los " + failedCount + " fallos",
+            ],
+          },
+        )
+      : null;
+
     var hero = el(
       "section",
       {
         class:
           "relative overflow-hidden rounded-3xl border p-6 shadow-lift sm:p-8 animate-fade-up " +
           (report.passed
-            ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70"
-            : "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/60"),
+            ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70 dark:border-emerald-900 dark:from-emerald-950 dark:via-slate-900 dark:to-slate-950"
+            : "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/60 dark:border-rose-900 dark:from-rose-950 dark:via-slate-900 dark:to-slate-950"),
       },
       el("div", {
-        class: "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl " + (report.passed ? "bg-emerald-300/30" : "bg-rose-300/30"),
+        class: "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl " + (report.passed ? "bg-emerald-300/30 dark:bg-emerald-500/10" : "bg-rose-300/30 dark:bg-rose-500/10"),
       }),
       el(
         "div",
@@ -245,7 +309,7 @@
           el(
             "svg",
             { viewBox: "0 0 120 120", class: "h-36 w-36 -rotate-90" },
-            el("circle", { cx: "60", cy: "60", r: "54", fill: "none", stroke: "#e2e8f0", "stroke-width": "10" }),
+            el("circle", { cx: "60", cy: "60", r: "54", fill: "none", class: "stroke-slate-200 dark:stroke-slate-700", "stroke-width": "10" }),
             ringStroke,
           ),
           el(
@@ -259,7 +323,7 @@
           "div",
           { class: "min-w-0 flex-1 text-center sm:text-left" },
           el("span", {
-            class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " + (report.passed ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"),
+            class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " + (report.passed ? "bg-emerald-700 text-white" : "bg-rose-700 text-white"),
             kids: [R.icon(report.passed ? "check" : "x", "h-3.5 w-3.5"), report.passed ? "Aprobado" : "No aprobado"],
           }),
           el("h1", { class: "mt-3 font-display text-2xl font-bold text-ink text-balance sm:text-3xl", text: report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!" }),
@@ -280,57 +344,39 @@
               report.elapsedTime !== undefined ? "Tiempo: " + Math.floor(report.elapsedTime / 60) + "m " + (report.elapsedTime % 60) + "s" : null,
               new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }),
             ].filter(Boolean).map(function (text) {
-              return el("span", { class: "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600", text: text });
+              return el("span", { class: "rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200", text: text });
             }),
           ),
         ),
         el(
           "div",
           { class: "flex w-full flex-col gap-2.5 sm:w-auto sm:shrink-0" },
-          el(
-            "button",
-            {
-              type: "button",
-              class: "group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95",
-              "data-action": "download",
-              on: { click: ctx.onDownload },
-              kids: [R.icon("download", "h-4 w-4"), "Descargar PDF"],
-            },
-          ),
-          el(
-            "button",
-            {
-              type: "button",
-              class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px",
-              "data-action": "retry",
-              on: { click: ctx.onRetry },
-              kids: [R.icon("refresh", "h-4 w-4"), "Repetir test"],
-            },
-          ),
-          report.results.some(function (r) { return !r.correct; })
-            ? el(
-                "button",
-                {
-                  type: "button",
-                  class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 active:translate-y-px",
-                  "data-action": "retry-failed",
-                  on: { click: ctx.onRetryFailed },
-                  kids: [R.icon("x", "h-4 w-4"), "Repetir solo fallos (" + report.results.filter(function (r) { return !r.correct; }).length + ")"],
-                },
-              )
-            : null,
-          el(
-            "button",
-            {
-              type: "button",
-              class: "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px",
-              "data-action": "new",
-              on: { click: ctx.onNew },
-              kids: [R.icon("grid", "h-4 w-4"), "Nuevo test"],
-            },
-          ),
+          (report.passed ? [downloadButton, retryFailedButton, retryButton, newButton] : [retryFailedButton, downloadButton, retryButton, newButton]).filter(Boolean),
         ),
       ),
+    );
+
+    function legendItem(tone, label) {
+      return el(
+        "span",
+        { class: "inline-flex items-center gap-1.5" },
+        el("span", { class: "h-2.5 w-2.5 rounded-full " + tone }),
+        label,
+      );
+    }
+
+    var legend = el(
+      "div",
+      {
+        class:
+          "mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-[11px] font-medium text-slate-600 shadow-card dark:border-slate-800",
+      },
+      [
+        legendItem("bg-emerald-500", "Acertada"),
+        legendItem("bg-amber-500", "Correcta que no marcaste"),
+        legendItem("bg-rose-500", "Fallada"),
+        legendItem("bg-slate-400", "Sin responder"),
+      ],
     );
 
     var review = el(
@@ -342,12 +388,13 @@
         el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Revisión del test" }),
         el(
           "div",
-          { class: "flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-card" },
+          { class: "flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-card dark:border-slate-800" },
           buildTab("all", "Todas", report.total),
           buildTab("correct", "Aciertos", report.correct),
           buildTab("failed", "Fallos", report.total - report.correct),
         ),
       ),
+      legend,
       el("div", { class: "mt-4" }, listHost),
     );
 

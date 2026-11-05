@@ -65,7 +65,8 @@
     Screens.results.mount(screenNode("screen-results"), {
       report: state.report,
       config: state.config,
-      onDownload: function () {
+      onDownload: function (done) {
+        var finish = done || function () {};
         // jsPDF (366 KB) is fetched on demand so it stays out of the initial
         // payload; the namespace exposes the same `jsPDF` named export the
         // UMD global did, so pdf.js needs no change.
@@ -74,9 +75,11 @@
             global.jspdf = mod;
             var name = global.IHFPdf.generate(state.report, state.config);
             if (name) R.toast("PDF generado: " + name);
+            finish();
           })
           .catch(function () {
-            R.toast("No se pudo cargar la librería PDF. Revisa tu conexión.");
+            R.toast("No se pudo generar el PDF. Vuelve a intentarlo.");
+            finish();
           });
       },
       onRetry: function () {
@@ -86,17 +89,21 @@
         var failedQuestions = state.report.results
           .filter(function (r) { return !r.correct; })
           .map(function (r) { return r.question; });
-        
+
         var customPool = failedQuestions;
         var customSize = Math.min(state.config.size, customPool.length);
-        
+
         state.config = Object.assign({}, state.config, { size: customSize });
         var pool = customPool;
         state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: customSize });
+        state.startTime = Date.now();
+        state.elapsedTime = 0;
         R.showScreen("screen-quiz");
         Screens.quiz.mount(screenNode("screen-quiz"), {
           quiz: state.quiz,
           onFinish: function (report) {
+            state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
+            report.elapsedTime = state.elapsedTime;
             state.report = report;
             showResults();
           },
@@ -129,9 +136,16 @@
 
     var toggle = document.getElementById("theme-toggle");
     if (toggle) {
+      var syncThemeLabel = function () {
+        var isDark = document.documentElement.classList.contains("dark");
+        toggle.setAttribute("aria-pressed", String(isDark));
+        toggle.setAttribute("aria-label", isDark ? "Activar tema claro" : "Activar tema oscuro");
+      };
+      syncThemeLabel();
       toggle.addEventListener("click", function () {
         var isDark = document.documentElement.classList.toggle("dark");
         localStorage.setItem("theme", isDark ? "dark" : "light");
+        syncThemeLabel();
       });
     }
   }

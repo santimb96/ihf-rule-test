@@ -70,7 +70,7 @@
     var startTime = Date.now();
     var timerInterval = null;
 
-    var PILL_CLASS = "h-9 min-w-[36px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
+    var PILL_CLASS = "h-11 min-w-[44px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
     var fill = el("div", { class: "progress-fill h-full rounded-full", style: { width: "0%" } });
     var counter = el("span", { class: "font-display text-sm font-semibold text-ink" });
     var answeredLabel = el("span", { class: "text-xs font-medium text-slate-500" });
@@ -109,19 +109,6 @@
         timerInterval = null;
       }
     }
-
-    var PILL_CLASS = "h-9 min-w-[36px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
-    var fill = el("div", { class: "progress-fill h-full rounded-full", style: { width: "0%" } });
-    var counter = el("span", { class: "font-display text-sm font-semibold text-ink" });
-    var answeredLabel = el("span", { class: "text-xs font-medium text-slate-500" });
-    var pills = el("div", { class: "flex flex-wrap gap-1.5" });
-    var cardHost = el("div", { class: "mt-4" });
-    var prevButton;
-    var nextButton;
-    var nextLabel;
-    var pillNodes = [];
-    var pillClasses = [];
-    var pillCurrent = [];
 
     function answeredCount() {
       return quiz.answeredCount();
@@ -174,8 +161,24 @@
       return (
         "option flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left " +
         (on
-          ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500"
-          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50")
+          ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-900/40"
+          : "border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60")
+      );
+    }
+
+    function checkBoxClass(on) {
+      return (
+        "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition " +
+        (on ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-transparent dark:border-slate-600")
+      );
+    }
+
+    function letterClass(on) {
+      return (
+        "option-letter grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold transition " +
+        (on
+          ? "bg-brand-600 text-white"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200")
       );
     }
 
@@ -185,11 +188,15 @@
       var hint = Hint.create(question);
 
       var optionNodes = question.options.map(function (opt) {
+        var boxIcon = R.icon("check", "h-3.5 w-3.5 text-white");
+        boxIcon.style.opacity = letters.includes(opt.letter) ? "1" : "0";
+        var box = el("span", { class: checkBoxClass(letters.includes(opt.letter)), kids: [boxIcon] });
         var node = el(
           "button",
           {
             type: "button",
-            "aria-pressed": String(letters.includes(opt.letter)),
+            role: "checkbox",
+            "aria-checked": String(letters.includes(opt.letter)),
             "data-letter": opt.letter,
             class: optionClass(letters.includes(opt.letter)),
             on: {
@@ -201,22 +208,19 @@
                     })
                   : current.concat(opt.letter).sort();
                 quiz.select(index, next);
-                node.setAttribute("aria-pressed", String(next.includes(opt.letter)));
-                node.className = optionClass(next.includes(opt.letter));
-                node.querySelector(".option-letter").className =
-                  "option-letter grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold transition " +
-                  (next.includes(opt.letter) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600");
+                var on = next.includes(opt.letter);
+                node.setAttribute("aria-checked", String(on));
+                node.className = optionClass(on);
+                node.querySelector(".option-letter").className = letterClass(on);
+                box.className = checkBoxClass(on);
+                boxIcon.style.opacity = on ? "1" : "0";
                 syncChrome();
               },
             },
           },
-          el("span", {
-            class:
-              "option-letter grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold transition " +
-              (letters.includes(opt.letter) ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600"),
-            text: opt.letter,
-          }),
+          el("span", { class: letterClass(letters.includes(opt.letter)), text: opt.letter }),
           el("span", { class: "flex-1 text-sm leading-relaxed text-slate-700", text: opt.text }),
+          box,
         );
         return node;
       });
@@ -241,8 +245,9 @@
           ),
           hint.button,
         ),
-        el("p", { class: "mt-5 text-base font-medium leading-relaxed text-ink sm:text-lg", text: question.text }),
-        el("div", { class: "mt-5 space-y-3", kids: optionNodes }),
+        el("h2", { id: "quiz-question", class: "mt-5 max-w-[70ch] text-base font-medium leading-relaxed text-ink sm:text-lg", text: question.text }),
+        el("p", { class: "mt-3 text-xs font-medium text-slate-500", text: "Marca todas las respuestas correctas. Puede haber más de una." }),
+        el("div", { class: "mt-3 space-y-3", role: "group", "aria-labelledby": "quiz-question", kids: optionNodes }),
         hint.panel,
       );
 
@@ -325,6 +330,7 @@
       var pill = el("button", {
         type: "button",
         "data-pill": String(i + 1),
+        "aria-label": "Ir a la pregunta " + (i + 1),
         class: PILL_CLASS,
         text: String(i + 1),
         title: "Pregunta " + (i + 1),
@@ -343,7 +349,7 @@
       {
         type: "button",
         "data-action": "prev",
-        class: "inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white",
+        class: "inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white dark:disabled:text-slate-500",
         on: {
           click: function () {
             go(index - 1);
@@ -373,7 +379,7 @@
 
     var nav = el(
       "div",
-      { class: "mt-4 flex items-center justify-between gap-3" },
+      { class: "quiz-nav sticky bottom-3 z-30 mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-lift backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" },
       prevButton,
       nextButton,
     );

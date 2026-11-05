@@ -25,7 +25,8 @@
     return R.el("span", { class: cls, text: chip.label });
   }
 
-  function create(question) {
+  function create(question, options) {
+    var subtle = !!(options && options.subtle);
     var chips = D.chips(question);
     var firstLink = chips.filter(function (c) {
       return c.page;
@@ -76,8 +77,9 @@
         type: "button",
         "aria-expanded": "false",
         "data-action": "hint",
-        class:
-          "inline-flex items-center gap-2 rounded-xl border border-accent-300/70 bg-accent-300/15 px-3.5 py-2 text-sm font-semibold text-amber-700 transition hover:bg-accent-300/30",
+        class: subtle
+          ? "hint-link -mr-1 inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold text-amber-700 transition hover:text-amber-800 hover:underline hover:underline-offset-4 dark:text-amber-300 dark:hover:text-amber-200 sm:py-1"
+          : "inline-flex items-center gap-2 rounded-xl border border-accent-300/70 bg-accent-300/15 px-3.5 py-2 text-sm font-semibold text-amber-700 transition hover:bg-accent-300/30 dark:text-amber-300",
         on: {
           click: function () {
             open = !open;
@@ -91,7 +93,7 @@
             }
           },
         },
-        kids: [R.icon("bulb", "h-4 w-4"), label],
+        kids: [R.icon("bulb", subtle ? "h-3.5 w-3.5" : "h-4 w-4"), label],
       },
     );
 

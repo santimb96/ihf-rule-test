@@ -37,20 +37,21 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased">
   <div id="app" class="flex flex-col">
+    <a href="#main" class="sr-only rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Saltar al contenido</a>
     <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div class="flex items-center gap-3">
-          <a class="rounded-xl bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 min-h-10 min-w-10 shadow-lift" href="/">
+          <a class="rounded-xl bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 min-h-10 min-w-10 shadow-lift" href="/" aria-label="Reglas de juego IHF · volver al inicio">
             <img src="assets/logo-handball-white.png" alt="" width="40" height="40" class="h-10 w-10">
           </a>
           <div class="leading-tight">
             <p class="font-display text-base font-semibold tracking-tight text-ink dark:text-slate-100">Reglas de juego IHF</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Tests basados en el catálogo oficial · <strong>Ed. julio 2025</strong></p>
+            <p class="text-xs text-slate-500 dark:text-slate-400"><span class="hidden sm:inline">Tests basados en el catálogo oficial · </span><strong>Ed. julio 2025</strong></p>
           </div>
         </div>
         <div class="flex items-center gap-3">
           <div class="hidden items-center gap-2 sm:flex" id="header-stats"></div>
-          <button type="button" id="theme-toggle" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Cambiar tema">
+          <button type="button" id="theme-toggle" class="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Activar tema oscuro">
             <svg class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
             <svg class="hidden h-5 w-5 dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
           </button>
@@ -58,7 +59,7 @@
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+    <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
       <section id="screen-setup" class="screen" aria-label="Configuración del test"></section>
       <section id="screen-quiz" class="screen hidden" aria-label="Test en curso"></section>
       <section id="screen-results" class="screen hidden" aria-label="Resultados"></section>
@@ -69,7 +70,7 @@
       <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div class="lg:col-span-2">
-            <a class="inline-flex items-center gap-3" href="/">
+            <a class="inline-flex items-center gap-3" href="/" aria-label="Reglas de juego IHF · volver al inicio">
               <img src="assets/logo-handball-white.png" alt="" width="36" height="36" class="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-1.5 shadow-lift">
               <span class="leading-tight">
                 <span class="block font-display text-sm font-semibold text-ink">Reglas de juego IHF</span>

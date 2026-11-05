@@ -29,6 +29,12 @@
     var poolLabel;
     var poolNote;
     var startButton;
+    var topicSummary;
+    var topicGrid;
+    var topicToggle;
+    // On phones the 19-topic catalogue pushed the CTA three screens down; the
+    // list starts folded there and the sticky summary carries the action.
+    var topicsExpanded = !(global.matchMedia && global.matchMedia("(max-width: 1023px)").matches);
 
     function sync() {
       var available = poolSize();
@@ -39,14 +45,23 @@
         entry.on = on;
         entry.button.setAttribute("aria-pressed", String(on));
         entry.button.className = chipClass(on);
-        entry.check.style.opacity = on ? "1" : "0";
+        entry.check.className = chipCheck(on);
+        entry.icon.style.opacity = on ? "1" : "0";
         entry.badge.className = chipBadge(on);
       });
 
       if (allButton) {
         var allOn = selected.size === topics.length;
-        var allLabel = allOn ? "Ninguno" : "Todos";
+        var allLabel = allOn ? "Quitar todos" : "Seleccionar todos";
         if (allButton.textContent !== allLabel) allButton.textContent = allLabel;
+      }
+
+      if (topicSummary) {
+        var summaryText =
+          selected.size === topics.length
+            ? "Todos los temas · " + available + " preguntas"
+            : selected.size + " de " + topics.length + " temas · " + available + " preguntas";
+        if (topicSummary.textContent !== summaryText) topicSummary.textContent = summaryText;
       }
 
       var fallback = S.SUPPORTED_LENGTHS.filter(function (n) {
@@ -97,24 +112,34 @@
       return (
         "option flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left " +
         (on
-          ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500"
-          : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-card")
+          ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-900/40"
+          : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/60")
       );
     }
 
+    // Rule codes read as codes, not as counters, so they ship in the data face.
     function chipBadge(on) {
       return (
-        "grid h-8 w-8 shrink-0 place-items-center rounded-lg font-display text-sm font-semibold transition " +
-        (on ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600")
+        "grid h-8 min-w-8 shrink-0 place-items-center rounded-md border px-1.5 font-mono text-xs font-semibold tabular-nums transition " +
+        (on
+          ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-700 dark:bg-brand-900/60 dark:text-brand-200"
+          : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400")
+      );
+    }
+
+    function chipCheck(on) {
+      return (
+        "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition " +
+        (on
+          ? "border-brand-600 bg-brand-600"
+          : "border-slate-300 bg-transparent dark:border-slate-600")
       );
     }
 
     function buildChip(topic) {
-      var check = el("span", {
-        class: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-white transition-opacity p-1",
-        style: { opacity: "0" },
-        kids: [R.icon("check", "h-4 w-4 text-white")],
-      });
+      var checkIcon = R.icon("check", "h-3.5 w-3.5 text-white");
+      checkIcon.style.opacity = "0";
+      var check = el("span", { class: chipCheck(false), kids: [checkIcon] });
       var badge = el("span", { class: chipBadge(false), text: topic.id === "SAR" ? "ZC" : topic.id });
       var count = D.pool([topic.id]).length;
       var button = el(
@@ -136,12 +161,12 @@
         el(
           "span",
           { class: "min-w-0 flex-1" },
-          el("span", { class: "block truncate text-sm font-semibold text-ink", text: topic.label }),
+          el("span", { class: "block text-sm font-semibold leading-snug text-ink", text: topic.label }),
           el("span", { class: "block text-xs text-slate-500", text: count + (count === 1 ? " pregunta" : " preguntas") }),
         ),
         check,
       );
-      chipNodes.push({ id: topic.id, button: button, check: check, badge: badge });
+      chipNodes.push({ id: topic.id, button: button, check: check, icon: checkIcon, badge: badge });
       return button;
     }
 
@@ -190,12 +215,11 @@
       el(
         "div",
         { class: "relative" },
-        el("p", { class: "text-xs font-semibold uppercase tracking-[0.18em] text-accent-300", text: "Basado en el catálogo oficial IHF · válido desde el 1 de julio de 2025" }),
-        el("h1", { class: "mt-2 font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
+        el("h1", { class: "font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
         el("p", {
           class: "mt-3 max-w-2xl text-sm leading-relaxed text-brand-100/90 sm:text-base",
           text: D.meta.questionCount +
-            " preguntas con sus respuestas y las directrices en las que se basan, extraídas de los catálogos oficiales. Filtra por tema, elige la longitud del test y responde a las preguntas.",
+            " preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.",
         }),
         el(
           "div",
@@ -203,7 +227,6 @@
           [
             D.meta.questionCount + " preguntas",
             D.topics().length + " temas",
-            "Aprobado ≥ 75%",
           ].map(function (text) {
             return el("span", {
               class: "rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium text-white/95 backdrop-blur",
@@ -219,38 +242,66 @@
       { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
       el(
         "div",
-        { class: "flex flex-wrap items-center justify-between gap-3" },
+        { class: "flex flex-wrap items-start justify-between gap-3" },
         el(
           "div",
           { class: "flex items-start gap-3" },
-          el("span", { class: "font-display text-4xl font-bold text-brand-600 mr-2", text: "1" }),
+          el("span", { class: "mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400", text: "1" }),
           el("div", null,
             el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Temas del test" }),
-            el("p", { class: "text-xs text-slate-500", text: "Selecciona los temas de las Reglas de Juego que quieres practicar" }),
+            (topicSummary = el("p", { class: "text-xs text-slate-500" })),
           ),
         ),
-        (allButton = el(
-          "button",
-          {
-            type: "button",
-            "data-action": "toggle-all",
-            class: "rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px",
-            on: {
-              click: function () {
-                if (selected.size === topics.length) selected.clear();
-                else topics.forEach(function (t) { selected.add(t.id); });
-                sync();
+        el(
+          "div",
+          { class: "flex flex-wrap items-center gap-2" },
+          (allButton = el(
+            "button",
+            {
+              type: "button",
+              "data-action": "toggle-all",
+              class: "rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
+              on: {
+                click: function () {
+                  if (selected.size === topics.length) selected.clear();
+                  else topics.forEach(function (t) { selected.add(t.id); });
+                  sync();
+                },
               },
+              text: "Quitar todos",
             },
-            text: "Todos",
-          },
-        )),
+          )),
+          (topicToggle = el(
+            "button",
+            {
+              type: "button",
+              "data-action": "toggle-topics",
+              "aria-expanded": "false",
+              "aria-controls": "topic-grid",
+              class: "rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
+              on: {
+                click: function () {
+                  topicsExpanded = !topicsExpanded;
+                  syncTopics();
+                },
+              },
+              text: "Ver temas",
+            },
+          )),
+        ),
       ),
-      el("div", {
-        class: "mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3",
+      (topicGrid = el("div", {
+        id: "topic-grid",
+        class: "mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3",
         kids: topics.map(buildChip),
-      }),
+      })),
     );
+
+    function syncTopics() {
+      topicGrid.classList.toggle("hidden", !topicsExpanded);
+      topicToggle.setAttribute("aria-expanded", String(topicsExpanded));
+      topicToggle.textContent = topicsExpanded ? "Ocultar temas" : "Ver temas";
+    }
 
     var sizesCard = el(
       "section",
@@ -258,11 +309,11 @@
       el(
         "div",
         { class: "flex items-start gap-3" },
-        el("span", { class: "font-display text-4xl font-bold text-brand-600 mr-2", text: "2" }),
+        el("span", { class: "mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400", text: "2" }),
         el("div", null,
           el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Preguntas por cuestionario" }),
           el("p", { class: "text-xs text-slate-500", text: "Se aprueba con un 75% o más de respuestas correctas. " },
-            el("strong", { class: "text-bold", text: "Cada pregunta puede tener una o varias opciones." })
+            el("strong", { class: "font-semibold text-ink", text: "Una o varias respuestas correctas por pregunta." })
           ),
         ),
       ),
@@ -291,77 +342,54 @@
       },
     );
 
+    // Sticky on phones: `bottom` keeps the CTA in view while the catalogue
+    // scrolls, then it settles into the page flow at its natural position.
     var summary = el(
       "div",
-      { class: "mt-6 flex flex-col gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:flex-row sm:items-center sm:justify-between" },
+      { class: "sticky bottom-3 z-30 mt-6 flex flex-col gap-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-lift backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-between sm:bg-white dark:border-slate-700 dark:bg-slate-900/95 sm:dark:bg-slate-900" },
       el("div", null, poolLabel, poolNote),
       startButton,
     );
 
     var gitHubCard = el(
       "section",
-      { class: "relative mt-6 overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
-      R.icon("github", "pointer-events-none absolute -right-6 -bottom-15 hidden h-52 w-52 text-brand-600/10 sm:block"),
+      { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
       el(
         "div",
-        { class: "relative" },
+        { class: "flex items-center gap-3" },
+        R.icon("github", "h-6 w-6 shrink-0 text-slate-500"),
+        el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Sobre este proyecto" }),
+      ),
+      el("p", {
+        class: "mt-3 max-w-2xl text-sm leading-relaxed text-slate-500",
+        text: "Esta web es una herramienta de estudio que no está vinculada con ningún organismo oficial. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto y compartirlo si te ha sido de utilidad!",
+      }),
+      el(
+        "div",
+        { class: "mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold" },
         el(
-          "div",
-          { class: "flex items-center gap-3" },
-          R.icon("github", "h-10 w-10 shrink-0 text-ink"),
-          el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Más información" }),
-        ),
-        el("p", {
-          class: "mt-3 max-w-2xl text-sm leading-relaxed text-slate-500",
-          text: "Esta web es una herramienta de estudio que no está vinculada con ningún organismo oficial. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto y compartirlo si te ha sido de utilidad!",
-        }),
-        el(
-          "div",
-          { class: "mt-4 flex flex-wrap items-center gap-3" },
-          el(
-            "a",
-            {
-              href: "https://github.com/santimb96/non-official-ihf-rule-test",
-              target: "_blank",
-              rel: "noopener",
-              class:
-                "group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 hover:from-brand-500 hover:to-brand-400 active:translate-y-0 active:brightness-95",
-              kids: [
-                R.icon("github", "h-5 w-5"),
-                "Ver en GitHub",
-                el("svg", {
-                  class: "h-4 w-4 opacity-80 transition group-hover:opacity-100",
-                  viewBox: "0 0 24 24",
-                  fill: "none",
-                  stroke: "currentColor",
-                  "stroke-width": "2",
-                  "stroke-linecap": "round",
-                  "stroke-linejoin": "round",
-                  "aria-hidden": "true",
-                  kids: [
-                    el("path", {
-                      d: "M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25",
-                    }),
-                  ],
-                }),
-              ],
-            },
-          ),
-          el("a", {
-            href: "https://github.com/santimb96/non-official-ihf-rule-test/issues",
+          "a",
+          {
+            href: "https://github.com/santimb96/non-official-ihf-rule-test",
             target: "_blank",
             rel: "noopener",
-            "aria-label": "Abrir una issue en santimb96/non-official-ihf-rule-test en GitHub",
-            class:
-              "inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-accent-400 hover:bg-accent-300/20 hover:text-accent-600 active:translate-y-px",
-            kids: [R.icon("issue", "h-5 w-5 shrink-0"), "Abrir una issue"],
-          }),
+            class: "inline-flex items-center gap-1.5 text-brand-700 underline-offset-4 transition hover:underline dark:text-brand-300",
+            kids: [R.icon("github", "h-4 w-4"), "Ver el proyecto en GitHub"],
+          },
         ),
+        el("a", {
+          href: "https://github.com/santimb96/non-official-ihf-rule-test/issues",
+          target: "_blank",
+          rel: "noopener",
+          class: "inline-flex items-center gap-1.5 text-slate-600 underline-offset-4 transition hover:text-brand-700 hover:underline dark:text-slate-300 dark:hover:text-brand-300",
+          kids: [R.icon("issue", "h-4 w-4 shrink-0"), "Abrir una issue"],
+        }),
       ),
     );
 
     R.mount(root, [hero, topicsCard, sizesCard, summary, gitHubCard]);
     sync();
+    syncTopics();
   }
 
   global.IHFScreens = global.IHFScreens || {};
