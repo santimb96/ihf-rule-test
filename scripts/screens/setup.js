@@ -145,6 +145,13 @@
       return button;
     }
 
+    function calculateTime(n){
+        if (n <= 5) return 10;
+        if (n <= 10) return 15;
+        if (n <= 20) return 25;
+        return 35;
+    }
+
     function buildSizeButton(n) {
       var hint = el("span", { class: "block text-[11px] text-slate-500" });
       var button = el(
@@ -163,7 +170,8 @@
           },
         },
         el("span", { class: "block font-display text-3xl font-bold text-ink", text: String(n) }),
-        el("span", { class: "mt-0.5 block text-xs font-medium text-slate-500", text: "preguntas" }),
+        el("span", { class: "mt-0.5 block text-xs font-normal text-slate-500", text: "preguntas" }),
+        el("strong", { class: "mt-0.5 block text-xs font-semibold text-slate-500", text: calculateTime(n) + " minutos apróx." }),
         hint,
       );
       sizeNodes.push({ size: n, button: button, hint: hint });
@@ -215,7 +223,7 @@
         el(
           "div",
           { class: "flex items-start gap-3" },
-          el("span", { class: "font-display text-4xl font-bold text-brand-700 mr-2", text: "1" }),
+          el("span", { class: "font-display text-4xl font-bold text-brand-600 mr-2", text: "1" }),
           el("div", null,
             el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Temas del test" }),
             el("p", { class: "text-xs text-slate-500", text: "Selecciona los temas de las Reglas de Juego que quieres practicar" }),
@@ -250,10 +258,12 @@
       el(
         "div",
         { class: "flex items-start gap-3" },
-        el("span", { class: "font-display text-4xl font-bold text-brand-700 mr-2", text: "2" }),
+        el("span", { class: "font-display text-4xl font-bold text-brand-600 mr-2", text: "2" }),
         el("div", null,
           el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Preguntas por cuestionario" }),
-          el("p", { class: "text-xs text-slate-500", text: "Se aprueba con un 75% o más de respuestas correctas. Cada pregunta puede tener una o varias respuestas." }),
+          el("p", { class: "text-xs text-slate-500", text: "Se aprueba con un 75% o más de respuestas correctas. " },
+            el("strong", { class: "text-bold", text: "Cada pregunta puede tener una o varias opciones." })
+          ),
         ),
       ),
       el("div", {
