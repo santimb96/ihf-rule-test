@@ -2,7 +2,8 @@
 
 Local study platform built on the official IHF question catalogues in `documents/`:
 pick topics, pick a length (5/10/20/30), answer, check the cited guidelines through
-per-question hints, see pass/fail at **>= 75%** and export a styled PDF report.
+per-question hints, see pass/fail at **>= 75%**, track your progress in the browser
+and export a styled PDF report.
 
 ## Run
 
@@ -51,12 +52,13 @@ styles/
   styles.css        custom CSS layer loaded after main.css (overrides utilities)
 scripts/
   app.js            bundler entry: imports the IIFEs in dependency order
-  scoring.js        75% pass rule over the test's possible answers
+  scoring.js        75% pass rule over the test's possible answers + question status
   quiz.js           attempt builder (shuffle, answers, report)
+  stats.js          per-browser attempt history + aggregations (no DOM)
   data.js           dataset access + guidelines parsing for hints
   hint.js           shared collapsible hint component
   render.js         DOM helpers, screen switching, icons, toast
-  screens/          setup / quiz / results screens
+  screens/          setup / quiz / results / stats screens
   pdf.js            jsPDF report (header, summary, accepted + failed sections)
   main.js           lifecycle wiring (jsPDF fetched on demand)
 data/questions.js   generated dataset (do not edit by hand)
@@ -71,9 +73,30 @@ odd/tasks/          feature document (specs, tasks, log)
 pnpm test          # node --test tests/*.test.mjs
 ```
 
-Covers dataset integrity, the 75%-of-answers pass rule, per-answer grading and the quiz engine.
+Covers dataset integrity, the 75%-of-answers pass rule, per-answer grading, the
+shared question classification, the quiz engine and the local statistics store.
 Note: `tests/rules.test.mjs` currently has 5 pre-existing failures (dataset text
 extraction, pending task T8); they reproduce on a clean checkout too.
+
+## Local statistics
+
+Every finished attempt is stored in `localStorage` under `ihf.stats.v1`, per
+browser and per device — nothing leaves the browser. Each record keeps the
+timestamp, percentage, score, pass state, length, elapsed time and one entry per
+question with its classification (acertada / parcial / fallada / sin responder)
+and the points earned.
+
+- The setup screen shows **Mis estadísticas** only when this browser holds at
+  least one attempt. The dialog compares the recent half of the history against
+  the previous half, shows the answer mix, the most practiced rule (primary rule
+  from `question.rules`) and the weakest one once it has at least 3 questions.
+- "Repetir los fallos" attempts are tagged `retry`: they count for practice and
+  rule accuracy, but are excluded from the trend so re-running missed questions
+  cannot make progress look worse.
+- The history keeps the newest 200 attempts. Export it as JSON before clearing;
+  the dialog also offers a two-step delete.
+- Corrupt, foreign-version or blocked storage (private mode, quota) degrades to
+  an empty history instead of breaking the app.
 
 ## Regenerate the dataset
 

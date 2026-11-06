@@ -7,6 +7,7 @@
 
   var R = global.IHFRender;
   var D = global.IHFData;
+  var Stats = global.IHFStats;
   var Screens = global.IHFScreens;
 
   var state = { config: null, quiz: null, report: null, startTime: null, elapsedTime: 0 };
@@ -26,8 +27,13 @@
   }
 
   function startQuiz(config) {
-    var pool = D.pool(config.topics);
-    state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: config.size });
+    launchQuiz(D.pool(config.topics), config.size, Stats ? Stats.MODES.full : "full");
+  }
+
+  // One mount for both paths (a fresh test and the retry of the misses) so the
+  // attempt is recorded in a single place and the two cannot drift apart.
+  function launchQuiz(pool, size, mode) {
+    state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: size });
     state.startTime = Date.now();
     state.elapsedTime = 0;
     R.showScreen("screen-quiz");
@@ -37,10 +43,16 @@
         state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
         report.elapsedTime = state.elapsedTime;
         state.report = report;
+        recordAttempt(report, mode);
         showResults();
       },
       onExit: showSetup,
     });
+  }
+
+  function recordAttempt(report, mode) {
+    if (!Stats) return;
+    Stats.record(Stats.toAttempt(report, mode));
   }
 
   function showResults() {
@@ -79,21 +91,7 @@
         var customSize = Math.min(state.config.size, customPool.length);
 
         state.config = Object.assign({}, state.config, { size: customSize });
-        var pool = customPool;
-        state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: customSize });
-        state.startTime = Date.now();
-        state.elapsedTime = 0;
-        R.showScreen("screen-quiz");
-        Screens.quiz.mount(screenNode("screen-quiz"), {
-          quiz: state.quiz,
-          onFinish: function (report) {
-            state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
-            report.elapsedTime = state.elapsedTime;
-            state.report = report;
-            showResults();
-          },
-          onExit: showSetup,
-        });
+        launchQuiz(customPool, customSize, Stats ? Stats.MODES.retry : "retry");
       },
       onNew: showSetup,
     });

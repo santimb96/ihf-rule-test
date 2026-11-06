@@ -370,6 +370,33 @@
 
     poolLabel = el("p", { class: "text-sm font-semibold text-ink" });
     poolNote = el("p", { class: "text-xs text-slate-500" });
+
+    // Only offered when this browser already holds at least one attempt: an
+    // empty dialog is worse than no button.
+    var statsCount = global.IHFStats ? global.IHFStats.all().length : 0;
+    var statsButton = statsCount
+      ? el(
+          "button",
+          {
+            type: "button",
+            "data-action": "stats",
+            class:
+              "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-brand-500 dark:hover:text-brand-200 sm:w-auto",
+            on: {
+              click: function () {
+                if (!global.IHFScreens || !global.IHFScreens.stats) return;
+                global.IHFScreens.stats.open({
+                  onCleared: function () {
+                    if (statsButton.parentNode) statsButton.parentNode.removeChild(statsButton);
+                  },
+                });
+              },
+            },
+            kids: [R.icon("grid", "h-4 w-4"), "Mis estadísticas"],
+          },
+        )
+      : null;
+
     startButton = el(
       "button",
       {
@@ -393,7 +420,7 @@
       "div",
       { class: "sticky bottom-3 z-30 mt-6 flex flex-col gap-4 rounded-md border border-slate-200/80 bg-white/95 p-5 shadow-lift backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-between sm:bg-white dark:border-slate-700 dark:bg-slate-900/95 sm:dark:bg-slate-900" },
       el("div", null, poolLabel, poolNote),
-      startButton,
+      el("div", { class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end" }, [statsButton, startButton].filter(Boolean)),
     );
 
     // Supplementary context, deliberately not another floating card: the page
