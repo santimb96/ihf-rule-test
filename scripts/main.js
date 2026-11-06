@@ -56,7 +56,9 @@
         import("jspdf")
           .then(function (mod) {
             global.jspdf = mod;
-            var name = global.IHFPdf.generate(state.report, state.config);
+            return global.IHFPdf.generate(state.report, state.config);
+          })
+          .then(function (name) {
             if (name) R.toast("PDF generado: " + name);
             finish();
           })

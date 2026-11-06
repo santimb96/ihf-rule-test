@@ -1,7 +1,8 @@
 /**
- * Styled PDF report built with jsPDF: cover header band, score summary card,
- * section titles and question blocks framed by a green/red side rule, all laid
- * out on a fixed margin grid with a small type scale and a baseline rhythm.
+ * Styled PDF report built with jsPDF and aligned with the on-screen design
+ * system: brand navy band with handball-court line art, Archivo for display
+ * text (same face as the web headings), a score ring, status pills with the
+ * same four review states as the results screen, and a fixed margin grid.
  */
 (function (global) {
   "use strict";
@@ -14,16 +15,17 @@
   var X1 = PAGE.w - 15; // outer right margin
   var CONTENT_W = X1 - X0; // 180
 
-  var FOOT_Y = 284; // footer rule
-  var BOTTOM = 279; // content must stop above the footer
-  var BAND1 = 36; // cover header band
+  var FOOT_Y = 282; // footer rule
+  var BOTTOM = 275; // content must stop above the footer
+  var BAND1 = 38; // cover header band
   var BANDN = 16; // running header band
-  var BAND_ACCENT = 1.6; // amber rule under every band
-  var START1 = BAND1 + BAND_ACCENT + 8.4; // 46
-  var STARTN = BANDN + BAND_ACCENT + 6.4; // 24
+  var BAND_ACCENT = 1.4; // amber rule under every band
+  var START1 = BAND1 + BAND_ACCENT + 8; // 47.4
+  var STARTN = BANDN + BAND_ACCENT + 6; // 23.4
 
   var SP = { s: 3.5, m: 5, l: 8 }; // vertical rhythm between blocks
   var BLOCK_GAP = 6; // gap between two question blocks
+  var RADIUS = { panel: 1.6, control: 1.0 }; // 6px / 4px at web scale
 
   var MM_PT = 25.4 / 72;
   function lh(size, mult) {
@@ -32,8 +34,8 @@
 
   // --- type scale --------------------------------------------------------
   var TYPE = {
-    display: { size: 24, style: "bold" },
-    title: { size: 19, style: "bold" },
+    display: { size: 25, style: "bold" },
+    title: { size: 18.5, style: "bold" },
     h1: { size: 13, style: "bold" },
     h2: { size: 10.5, style: "bold" },
     body: { size: 9.5, style: "normal" },
@@ -42,49 +44,73 @@
     caption: { size: 7.5, style: "normal" },
   };
 
-  // --- palette -----------------------------------------------------------
+  // --- palette: the web's brand tokens ----------------------------------
   var C = {
-    navy: [17, 34, 77],
-    navySoft: [168, 188, 236],
-    amber: [245, 158, 11],
-    green: [16, 140, 97],
-    greenDark: [6, 95, 70],
-    greenTint: [231, 247, 240],
-    greenWash: [246, 252, 249],
-    greenLine: [211, 233, 223],
-    red: [203, 48, 63],
-    redDark: [153, 27, 27],
-    redTint: [253, 236, 237],
-    redWash: [254, 248, 248],
-    redLine: [244, 218, 220],
-    ink: [15, 23, 42],
-    slate: [71, 85, 105],
-    muted: [100, 116, 139],
-    line: [226, 232, 240],
-    card: [236, 241, 246],
-    badge: [148, 163, 184],
+    brand950: [20, 28, 74], // #141c4a
+    brand900: [30, 44, 116], // #1e2c74
+    brand700: [30, 51, 184], // #1e33b8
+    brand600: [37, 66, 230], // #2542e6
+    brand200: [168, 188, 236],
+    amber: [245, 158, 11], // #f59e0b accent
+    amberDark: [146, 64, 14], // #92400e
+    amberTint: [254, 243, 199], // #fef3c7
+    amberWash: [255, 251, 235], // #fffbeb
+    amberLine: [253, 230, 138], // #fde68a
+    green: [5, 150, 105], // #059669
+    greenDark: [4, 120, 87], // #047857
+    greenTint: [209, 250, 229], // #d1fae5
+    greenWash: [236, 253, 245], // #ecfdf5
+    greenLine: [167, 243, 208], // #a7f3d0
+    rose: [225, 29, 72], // #e11d48
+    roseDark: [190, 18, 60], // #be123c
+    roseTint: [255, 228, 230], // #ffe4e6
+    roseWash: [255, 241, 242], // #fff1f2
+    roseLine: [254, 205, 211], // #fecdd3
+    slateTint: [241, 245, 249], // #f1f5f9
+    slateWash: [248, 250, 252], // #f8fafc
+    ink: [11, 18, 32], // #0b1220
+    slate: [71, 85, 105], // #475569
+    muted: [100, 116, 139], // #64748b
+    line: [226, 232, 240], // #e2e8f0
+    card: [248, 250, 252], // #f8fafc
+    badge: [148, 163, 184], // #94a3b8
     white: [255, 255, 255],
   };
 
-  /** Status tone used by the section title and by each question block. */
-  function toneFor(correct) {
-    return correct
-      ? {
-          accent: C.green,
-          dark: C.greenDark,
-          tint: C.greenTint,
-          wash: C.greenWash,
-          line: C.greenLine,
-          pill: C.green,
-        }
-      : {
-          accent: C.red,
-          dark: C.redDark,
-          tint: C.redTint,
-          wash: C.redWash,
-          line: C.redLine,
-          pill: C.red,
-        };
+  /**
+   * The four review states of the results screen, replicated exactly:
+   * accepted (all correct options picked, no wrong one), partial (a correct
+   * subset without mistakes), failed (a wrong option was picked) and
+   * unanswered (nothing selected).
+   */
+  function statusOf(result) {
+    var answer = (result.question && result.question.answer) || [];
+    var selected = result.selected || [];
+    if (result.correct) return "accepted";
+    if (!selected.length) return "unanswered";
+    for (var i = 0; i < selected.length; i++) {
+      if (answer.indexOf(selected[i]) === -1) return "failed";
+    }
+    return "partial";
+  }
+
+  var STATUS = {
+    accepted: { label: "ACERTADA", accent: C.green, dark: C.greenDark, tint: C.greenTint, wash: C.greenWash, line: C.greenLine },
+    partial: { label: "PARCIAL", accent: C.amber, dark: C.amberDark, tint: C.amberTint, wash: C.amberWash, line: C.amberLine },
+    failed: { label: "FALLADA", accent: C.rose, dark: C.roseDark, tint: C.roseTint, wash: C.roseWash, line: C.roseLine },
+    unanswered: { label: "SIN RESPONDER", accent: C.badge, dark: C.slate, tint: C.slateTint, wash: C.slateWash, line: C.line },
+  };
+
+  var STATUS_LABELS = {
+    accepted: STATUS.accepted.label,
+    partial: STATUS.partial.label,
+    failed: STATUS.failed.label,
+    unanswered: STATUS.unanswered.label,
+  };
+
+  /** The file name repeats the answer score shown in the summary card. */
+  function filenameFor(report, stamp) {
+    return "ihf-test-" + report.score + "-de-" + report.totalAnswers + "-" + stamp + ".pdf";
   }
 
   // jsPDF standard fonts only cover Latin-1, so normalise typographic glyphs.
@@ -105,14 +131,55 @@
       .replace(/[^\x20-\x7E\xA0-\xFF]/g, "");
   }
 
-  function generate(report, config) {
+  // --- assets ------------------------------------------------------------
+  function toBase64(bytes) {
+    var bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  async function loadAsset(url) {
+    var res = await fetch(url);
+    if (!res.ok) throw new Error(url + " -> " + res.status);
+    return new Uint8Array(await res.arrayBuffer());
+  }
+
+  async function generate(report, config) {
     var jsPDF = global.jspdf && global.jspdf.jsPDF;
     if (!jsPDF) {
       global.IHFRender.toast("No se pudo cargar la librería PDF. Revisa tu conexión.");
       return null;
     }
 
+    // The display face and the logo are optional: without them the report
+    // falls back to Helvetica and the amber "R" tile, never to a broken PDF.
+    var fontB64 = null;
+    var logoData = null;
+    try {
+      fontB64 = toBase64(await loadAsset("assets/fonts/archivo-bold.ttf"));
+    } catch (err) {
+      fontB64 = null;
+    }
+    try {
+      logoData = "data:image/png;base64," + toBase64(await loadAsset("assets/logo-handball-white.png"));
+    } catch (err) {
+      logoData = null;
+    }
+
     var doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+    var DISPLAY = "helvetica";
+    if (fontB64) {
+      try {
+        doc.addFileToVFS("Archivo-Bold.ttf", fontB64);
+        doc.addFont("Archivo-Bold.ttf", "Archivo", "bold");
+        DISPLAY = "Archivo";
+      } catch (err) {
+        DISPLAY = "helvetica";
+      }
+    }
+
     var y = 0;
     var pageNo = 1;
 
@@ -129,14 +196,13 @@
       doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
     }
 
-    // jsPDF 2.5.x exposes roundedRect(x, y, w, h, rx, ry, style).
     function rrect(x, yy, w, h, r, style) {
       doc.roundedRect(x, yy, w, h, r, r, style);
     }
 
     function txt(str, x, yy, o) {
       o = o || {};
-      doc.setFont("helvetica", o.style || "normal");
+      doc.setFont(o.family || "helvetica", o.style || "normal");
       doc.setFontSize(o.size || TYPE.body.size);
       setColor(o.color || C.ink);
       doc.text(sanitize(str), x, yy, {
@@ -146,21 +212,35 @@
       });
     }
 
-    function wrap(str, style, size, width) {
-      doc.setFont("helvetica", style);
+    /** Display text: Archivo when embedded, bold Helvetica otherwise. */
+    function display(str, x, yy, o) {
+      o = o || {};
+      txt(str, x, yy, {
+        family: DISPLAY,
+        style: "bold",
+        size: o.size || TYPE.h1.size,
+        color: o.color || C.ink,
+        align: o.align,
+        baseline: o.baseline,
+        charSpace: o.charSpace,
+      });
+    }
+
+    function wrap(str, style, size, width, family) {
+      doc.setFont(family || "helvetica", style);
       doc.setFontSize(size);
       return doc.splitTextToSize(sanitize(str), width);
     }
 
-    function textWidth(str, style, size) {
-      doc.setFont("helvetica", style);
+    function textWidth(str, style, size, family) {
+      doc.setFont(family || "helvetica", style);
       doc.setFontSize(size);
       return doc.getTextWidth(sanitize(str));
     }
 
     /** Draws pre-wrapped lines from a block top and returns the block height. */
-    function linesBlock(lines, x, yTop, size, style, color, step) {
-      doc.setFont("helvetica", style);
+    function linesBlock(lines, x, yTop, size, style, color, step, family) {
+      doc.setFont(family || "helvetica", style);
       doc.setFontSize(size);
       setColor(color);
       lines.forEach(function (line, i) {
@@ -169,69 +249,118 @@
       return lines.length * step;
     }
 
-    function paragraphHeight(lines, size) {
-      return lines.length * lh(size, 1.4);
+    // --- handball court line art (same motif as the web hero) ------------
+    function courtArt(x, yTop, w, h) {
+      var sx = w / 400;
+      var sy = h / 200;
+      function px(u) {
+        return x + u * sx;
+      }
+      function py(v) {
+        return yTop + v * sy;
+      }
+      function strokeArc(cx, cy, r, a0, a1, steps) {
+        var prevX = px(cx) + r * sx * Math.cos(a0);
+        var prevY = py(cy) + r * sy * Math.sin(a0);
+        for (var i = 1; i <= steps; i++) {
+          var a = a0 + ((a1 - a0) * i) / steps;
+          var nx = px(cx) + r * sx * Math.cos(a);
+          var ny = py(cy) + r * sy * Math.sin(a);
+          doc.line(prevX, prevY, nx, ny);
+          prevX = nx;
+          prevY = ny;
+        }
+      }
+
+      doc.setLineWidth(0.5);
+      setDraw(C.white);
+      doc.setGState(new doc.GState({ opacity: 0.22 }));
+
+      doc.rect(px(1.5), py(1.5), (397 * w) / 400, (197 * h) / 200, "S");
+      doc.line(px(200), py(1.5), px(200), py(198.5));
+      // Left goal area: goal-line -> arc -> 3 m front line -> arc -> goal-line.
+      strokeArc(0, 85, 60, -Math.PI / 2, 0, 14);
+      doc.line(px(60), py(85), px(60), py(115));
+      strokeArc(0, 115, 60, 0, Math.PI / 2, 14);
+      // Right goal area.
+      strokeArc(400, 85, 60, -Math.PI / 2, -Math.PI, 14);
+      doc.line(px(340), py(85), px(340), py(115));
+      strokeArc(400, 115, 60, Math.PI, Math.PI / 2, 14);
+      // Goals.
+      doc.setLineWidth(1.4);
+      doc.line(px(1.5), py(85), px(1.5), py(115));
+      doc.line(px(398.5), py(85), px(398.5), py(115));
+
+      doc.setGState(new doc.GState({ opacity: 1 }));
     }
 
     // --- header bands ----------------------------------------------------
+    function lerpColor(a, b, t) {
+      return [
+        Math.round(a[0] + (b[0] - a[0]) * t),
+        Math.round(a[1] + (b[1] - a[1]) * t),
+        Math.round(a[2] + (b[2] - a[2]) * t),
+      ];
+    }
+
+    /** Stepped gradient that reads as the web hero (brand-950 -> 900 -> 700). */
+    function paintBandGradient(h) {
+      var steps = 72;
+      for (var i = 0; i < steps; i++) {
+        var t = i / (steps - 1);
+        setFill(t < 0.5 ? lerpColor(C.brand950, C.brand900, t * 2) : lerpColor(C.brand900, C.brand700, (t - 0.5) * 2));
+        doc.rect((PAGE.w / steps) * i, 0, PAGE.w / steps + 0.15, h, "F");
+      }
+    }
+
     function header(first) {
       var band = first ? BAND1 : BANDN;
       setFill(C.white);
       doc.rect(0, 0, PAGE.w, PAGE.h, "F");
-      setFill(C.navy);
-      doc.rect(0, 0, PAGE.w, band, "F");
+      paintBandGradient(band);
       setFill(C.amber);
       doc.rect(0, band, PAGE.w, BAND_ACCENT, "F");
 
       if (first) {
-        setFill(C.amber);
-        rrect(X0, 9.5, 15, 15, 2.5, "F");
-        txt("R", X0 + 7.5, 17.4, {
-          style: "bold",
-          size: 11,
-          color: C.navy,
-          align: "center",
-          baseline: "middle",
-        });
-        txt("INFORME DE RESULTADOS", X0 + 21, 11.5, {
-          style: "bold",
+        courtArt(148, 4, 56, 28);
+
+        if (logoData) {
+          try {
+            doc.addImage(logoData, "PNG", X0, 10.5, 15, 15);
+          } catch (err) {
+            logoData = null;
+          }
+        }
+        if (!logoData) {
+          setFill(C.amber);
+          rrect(X0, 10.5, 15, 15, RADIUS.panel, "F");
+          display("R", X0 + 7.5, 18.4, {
+            size: 11,
+            color: C.brand950,
+            align: "center",
+            baseline: "middle",
+          });
+        }
+
+        display("INFORME DE RESULTADOS", X0 + 21, 12, {
           size: TYPE.caption.size,
           color: C.amber,
           charSpace: 1.2,
         });
-        txt("Reglas de juego IHF", X0 + 21, 21, {
-          style: "bold",
+        display("Reglas de juego IHF", X0 + 21, 23, {
           size: TYPE.title.size,
           color: C.white,
-          charSpace: 0.5,
+          charSpace: 0.2,
         });
-        txt("Informe del test de Reglas de Juego - Catálogo oficial IHF (jul 2025)", X0 + 21, 28.5, {
+        txt("Test no oficial · Catálogo oficial IHF (jul 2025)", X0 + 21, 30.5, {
           size: TYPE.small.size,
-          color: C.navySoft,
-        });
-
-        txt(
-          new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }),
-          X1,
-          16,
-          { size: TYPE.small.size, color: C.navySoft, align: "right" },
-        );
-        txt("Aprobado >= 75%", X1, 24.5, {
-          style: "bold",
-          size: TYPE.small.size,
-          color: C.amber,
-          align: "right",
+          color: C.brand200,
         });
       } else {
-        txt("Reglas de juego IHF", X0, 10.5, {
-          style: "bold",
-          size: TYPE.body.size,
-          color: C.white,
-          charSpace: 0.4,
-        });
-        txt("Test de Reglas de Juego - Informe de resultados", X1, 10.5, {
+        display("Reglas de juego IHF", X0, 11, { size: TYPE.h2.size, color: C.white });
+        txt("Test no oficial · Informe de resultados", X1, 11, {
           size: TYPE.caption.size,
-          color: C.navySoft,
+          color: C.brand200,
           align: "right",
         });
       }
@@ -248,6 +377,30 @@
       if (y + h > BOTTOM) newPage();
     }
 
+    // --- score ring (mirrors the results ring) ---------------------------
+    function ring(cx, cy, r, pct, color) {
+      doc.setLineWidth(3.2);
+      setDraw(C.line);
+      doc.circle(cx, cy, r, "S");
+      var p = Math.max(0, Math.min(100, pct));
+      if (p > 0) {
+        var steps = Math.max(4, Math.round((p / 100) * 120));
+        var a0 = -Math.PI / 2;
+        var a1 = a0 + (p / 100) * Math.PI * 2;
+        setDraw(color);
+        var prevX = cx + r * Math.cos(a0);
+        var prevY = cy + r * Math.sin(a0);
+        for (var i = 1; i <= steps; i++) {
+          var a = a0 + ((a1 - a0) * i) / steps;
+          var nx = cx + r * Math.cos(a);
+          var ny = cy + r * Math.sin(a);
+          doc.line(prevX, prevY, nx, ny);
+          prevX = nx;
+          prevY = ny;
+        }
+      }
+    }
+
     // --- summary card ----------------------------------------------------
     function summaryCard() {
       var topicsText =
@@ -259,114 +412,123 @@
               })
               .join(", ");
 
-      var barW = 4;
-      var colX = X0 + barW + 8; // 27, score column
-      var divX = X0 + 66; // 81, vertical divider
-      var rightX = divX + 8; // 89, details column
-      var rightW = X1 - 8 - rightX; // 98
+      var innerX = X0 + 44;
+      var innerW = X1 - 8 - innerX;
+      var tone = report.passed ? STATUS.accepted : STATUS.failed;
+      var headline = report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!";
+      var sentence = report.passed
+        ? "Has acertado " + report.score + " de " + report.totalAnswers + " respuestas (" + report.percentage + "%), por encima del 75% exigido."
+        : "Has acertado " + report.score + " de " + report.totalAnswers + " respuestas (" + report.percentage + "%). Necesitabas " + report.required + " respuestas correctas para aprobar (75%).";
+      var details =
+        report.total +
+        (report.total === 1 ? " pregunta" : " preguntas") +
+        " · Mínimo para aprobar: " +
+        report.required +
+        (report.required === 1 ? " respuesta" : " respuestas") +
+        " (75%)" +
+        (report.elapsedTime !== undefined
+          ? " · Tiempo: " + Math.floor(report.elapsedTime / 60) + "m " + (report.elapsedTime % 60) + "s"
+          : "");
 
-      var topicLines = wrap("Temas: " + topicsText, "normal", TYPE.caption.size, rightW);
-      var topicsH = paragraphHeight(topicLines, TYPE.caption.size);
-      var leftH = 45;
-      var cardH = Math.max(leftH, 22.5 + topicsH + 6);
+      var stmtStep = lh(TYPE.body.size, 1.4);
+      var smallStep = lh(TYPE.small.size, 1.4);
+      var capStep = lh(TYPE.caption.size, 1.4);
+      var sLines = wrap(sentence, "normal", TYPE.body.size, innerW);
+      var dLines = wrap(details, "normal", TYPE.small.size, innerW);
+      var tLines = wrap("Temas: " + topicsText, "normal", TYPE.caption.size, innerW);
+      var headlineH = lh(TYPE.h1.size, 1.2);
+      var contentH =
+        8 + 3.5 + headlineH + 2 + sLines.length * stmtStep + 2 + dLines.length * smallStep + 1.5 + tLines.length * capStep;
+      var cardH = Math.max(40, contentH + 13);
 
       setFill(C.white);
       setDraw(C.line);
       doc.setLineWidth(0.35);
-      doc.rect(X0, y, CONTENT_W, cardH, "FD");
+      rrect(X0, y, CONTENT_W, cardH, RADIUS.panel, "FD");
 
-      setFill(report.passed ? C.green : C.red);
-      doc.rect(X0, y, barW, cardH, "F");
+      // Ring column.
+      var cx = X0 + 24;
+      var cy = y + cardH / 2;
+      ring(cx, cy, 13.5, report.percentage, tone.accent);
+      display(report.percentage + "%", cx, cy - 1.4, {
+        size: 14,
+        color: C.ink,
+        align: "center",
+        baseline: "middle",
+      });
+      txt("respuestas", cx, cy + 5.4, {
+        size: 6.2,
+        color: C.muted,
+        align: "center",
+        baseline: "middle",
+      });
 
-      setDraw(C.line);
-      doc.setLineWidth(0.3);
-      doc.line(divX, y + 6, divX, y + cardH - 6);
-
-      // Left column: status pill, score, percentage.
+      // Copy column.
+      var top = y + 7;
       var pillText = report.passed ? "APROBADO" : "NO APROBADO";
+      var pillH = 8;
       var pw = textWidth(pillText, "bold", TYPE.small.size) + 9;
-      setFill(report.passed ? C.green : C.red);
-      rrect(colX, y + 6, pw, 8, 4, "F");
-      txt(pillText, colX + pw / 2, y + 10.2, {
+      setFill(tone.accent);
+      rrect(innerX, top, pw, pillH, pillH / 2, "F");
+      txt(pillText, innerX + pw / 2, top + pillH / 2, {
+        family: DISPLAY,
         style: "bold",
         size: TYPE.small.size,
         color: C.white,
         align: "center",
         baseline: "middle",
+        charSpace: 0.4,
       });
 
-      var score = report.score + "/" + report.totalAnswers;
-      txt(score, colX, y + 31, {
-        style: "bold",
-        size: TYPE.display.size,
-        color: report.passed ? C.green : C.red,
-      });
-      txt(report.percentage + "% de respuestas", colX, y + 38.5, {
-        size: TYPE.body.size,
-        color: C.slate,
-      });
-
-      // Right column: test details and topics.
-      txt("Test de Reglas de Juego", rightX, y + 12, {
-        style: "bold",
-        size: TYPE.h2.size,
-        color: C.navy,
-      });
-      var timeStr = report.elapsedTime !== undefined ? "  |  Tiempo: " + Math.floor(report.elapsedTime / 60) + "m " + (report.elapsedTime % 60) + "s" : "";
-      txt(
-        report.total + " preguntas  |  Mínimo para aprobar: " + report.required + " respuestas (75%)" + timeStr,
-        rightX,
-        y + 18.5,
-        { size: TYPE.small.size, color: C.slate },
-      );
-      linesBlock(
-        topicLines,
-        rightX,
-        y + 22.5,
-        TYPE.caption.size,
-        "normal",
-        C.muted,
-        lh(TYPE.caption.size, 1.4),
-      );
+      var headlineBaseline = top + pillH + 4.6;
+      display(headline, innerX, headlineBaseline, { size: TYPE.h1.size, color: C.ink });
+      var cursor = headlineBaseline + 3.2;
+      cursor += linesBlock(sLines, innerX, cursor, TYPE.body.size, "normal", C.slate, stmtStep) + 2;
+      cursor += linesBlock(dLines, innerX, cursor, TYPE.small.size, "normal", C.slate, smallStep) + 1.5;
+      linesBlock(tLines, innerX, cursor, TYPE.caption.size, "normal", C.muted, capStep);
 
       y += cardH + SP.l;
     }
 
     function legend() {
       var top = y;
+      // Same four labels as the results screen legend.
       var items = [
-        { c: C.green, label: "Respuesta correcta" },
-        { c: C.red, label: "Selección incorrecta" },
-        { c: C.badge, label: "Sin marcar" },
+        { c: C.green, label: "Acertada" },
+        { c: C.amber, label: "Correcta que no marcaste" },
+        { c: C.rose, label: "Fallada" },
+        { c: C.badge, label: "Sin responder" },
       ];
       var x = X0;
       items.forEach(function (it) {
         setFill(it.c);
-        rrect(x, top + 1, 3.6, 3.6, 0.9, "F");
-        txt(it.label, x + 5.2, top + 4.4, { size: TYPE.caption.size, color: C.slate });
-        x += 5.2 + textWidth(it.label, "normal", TYPE.caption.size) + 12;
+        rrect(x, top + 0.6, 2.6, 2.6, 0.8, "F");
+        txt(it.label, x + 4.2, top + 2.8, { size: TYPE.caption.size, color: C.slate });
+        x += 4.2 + textWidth(it.label, "normal", TYPE.caption.size) + 8;
       });
 
       var note =
-        "Cada bloque cita las directrices del catálogo y lleva en el margen derecho una barra " +
-        "de estado: verde si la pregunta se aceptó, rojo si se falló.";
+        "Cada bloque marca en verde las respuestas correctas que elegiste, en ámbar las correctas que " +
+        "no marcaste, en rojo las incorrectas marcadas y en gris lo que quedó sin marcar. La barra del " +
+        "margen derecho repite el estado de la pregunta.";
       var lines = wrap(note, "normal", TYPE.caption.size, CONTENT_W);
-      var h = linesBlock(lines, X0, top + 9, TYPE.caption.size, "normal", C.muted, lh(TYPE.caption.size, 1.45));
-      y = top + 9 + h + SP.l;
+      var h = linesBlock(lines, X0, top + 8, TYPE.caption.size, "normal", C.muted, lh(TYPE.caption.size, 1.45));
+      y = top + 8 + h + SP.l;
     }
 
     // --- section title ---------------------------------------------------
     function sectionTitle(label, count, tone) {
       ensureSpace(50);
       var top = y;
-      txt(label, X0, top + 10, { style: "bold", size: TYPE.h1.size, color: tone.accent });
-      var labelW = textWidth(label, "bold", TYPE.h1.size);
+      display(label, X0, top + 10, { size: TYPE.h1.size, color: tone.accent });
+      var labelW = textWidth(label, "bold", TYPE.h1.size, DISPLAY);
 
       var countText = String(count);
       var pillW = textWidth(countText, "bold", TYPE.small.size) + 8;
       setFill(tone.tint);
       rrect(X0 + labelW + 6, top + 3, pillW, 8, 4, "F");
-      txt(countText, X0 + labelW + 6 + pillW / 2, top + 7.2, {
+      txt(countText, X0 + labelW + 6 + pillW / 2, top + 7, {
+        family: DISPLAY,
         style: "bold",
         size: TYPE.small.size,
         color: tone.dark,
@@ -400,19 +562,20 @@
           return c.label;
         })
         .join("  |  ");
-      var tone = toneFor(result.correct);
-      var pillText = result.correct ? "ACERTADA" : result.selected.length ? "FALLADA" : "SIN RESPONDER";
+      var status = statusOf(result);
+      var tone = STATUS[status];
+      var pillText = tone.label;
 
       var stmtStep = lh(TYPE.body.size, 1.4);
       var stmtLines = wrap(q.text, "bold", TYPE.body.size, IW);
       var stmtH = stmtLines.length * stmtStep + SP.s;
 
       var optRows = q.options.map(function (o) {
-        var kind = q.answer.includes(o.letter)
-          ? "correct"
-          : result.selected.includes(o.letter)
-            ? "wrong"
-            : "neutral";
+        // Same four option states as the review screen: hit (picked), missed
+        // (correct but not picked), wrong (picked and incorrect), plain.
+        var inKey = q.answer.includes(o.letter);
+        var picked = result.selected.includes(o.letter);
+        var kind = inKey && picked ? "hit" : inKey ? "missed" : picked ? "wrong" : "neutral";
         var style = kind === "neutral" ? "normal" : "bold";
         var step = lh(TYPE.body.size, 1.4);
         var lines = wrap(o.text, style, TYPE.body.size, IW - 10.5);
@@ -431,9 +594,9 @@
         "Directrices: " + (chipText || q.rules),
         TYPE.quote.style,
         TYPE.quote.size,
-        163,
+        158,
       );
-      var hintH = hintLines.length * hintStep + 7;
+      var hintH = hintLines.length * hintStep + 8;
 
       // Header row and statement are one element: they can never split apart.
       var elements = [
@@ -475,25 +638,27 @@
     function drawHeadStatement(result, tone, pillText, stmtLines, stmtStep, cy) {
       var q = result.question;
 
-      var pw = textWidth(pillText, "bold", TYPE.caption.size) + 8;
-      setFill(tone.pill);
+      var pw = textWidth(pillText, "bold", TYPE.caption.size, DISPLAY) + 8;
+      setFill(tone.accent);
       rrect(IX, cy, pw, 6.5, 3.25, "F");
       txt(pillText, IX + pw / 2, cy + 3.4, {
+        family: DISPLAY,
         style: "bold",
         size: TYPE.caption.size,
         color: C.white,
         align: "center",
         baseline: "middle",
+        charSpace: 0.3,
       });
 
       var idText = "Pregunta " + q.id;
       var idX = IX + pw + 6;
-      txt(idText, idX, cy + 4.7, { style: "bold", size: TYPE.body.size, color: C.ink });
+      display(idText, idX, cy + 4.7, { size: TYPE.body.size, color: C.ink });
 
       var answerText = "Tu respuesta: " + (result.selected.length ? result.selected.join(", ") : "-");
       var answerW = textWidth(answerText, "bold", TYPE.small.size);
       var topic = D.topicLabel(q.topic);
-      var topicX = idX + textWidth(idText, "bold", TYPE.body.size) + 7;
+      var topicX = idX + textWidth(idText, "bold", TYPE.body.size, DISPLAY) + 7;
       if (topicX + textWidth(topic, "normal", TYPE.small.size) + 8 + answerW <= IR) {
         txt(topic, topicX, cy + 4.7, { size: TYPE.small.size, color: C.muted });
       }
@@ -511,26 +676,34 @@
       linesBlock(stmtLines, IX, cy + 12, TYPE.body.size, "bold", C.ink, stmtStep);
     }
 
+    var OPTION_TINT = {
+      hit: C.greenTint,
+      missed: C.amberTint,
+      wrong: C.roseTint,
+      neutral: null,
+    };
+    var OPTION_BADGE = { hit: C.green, missed: C.amber, wrong: C.rose, neutral: C.badge };
+    var OPTION_TEXT = { hit: C.greenDark, missed: C.amberDark, wrong: C.roseDark, neutral: C.slate };
+
     function drawOption(row, cy) {
       if (row.kind !== "neutral") {
-        setFill(row.kind === "correct" ? C.greenTint : C.redTint);
-        doc.rect(TINT_X, cy, TINT_W, row.h, "F");
+        setFill(OPTION_TINT[row.kind]);
+        rrect(TINT_X, cy, TINT_W, row.h, RADIUS.control, "F");
       }
 
-      var badge = row.kind === "correct" ? C.green : row.kind === "wrong" ? C.red : C.badge;
+      var badge = OPTION_BADGE[row.kind];
       var bh = 6.5;
       var by = cy + (row.h - bh) / 2;
       setFill(badge);
-      rrect(IX, by, bh, bh, 1.6, "F");
-      txt(row.letter, IX + bh / 2, by + bh / 2, {
-        style: "bold",
+      rrect(IX, by, bh, bh, RADIUS.control, "F");
+      display(row.letter, IX + bh / 2, by + bh / 2, {
         size: TYPE.caption.size,
         color: C.white,
         align: "center",
         baseline: "middle",
       });
 
-      var color = row.kind === "correct" ? C.greenDark : row.kind === "wrong" ? C.redDark : C.slate;
+      var color = OPTION_TEXT[row.kind];
       // linesBlock anchors the alphabetic baseline, which leaves the em box
       // above the line-box centre; nudge by half a leading so the glyphs sit
       // on the badge centre instead of a millimetre above it.
@@ -541,7 +714,7 @@
 
     function drawCorrect(result, tone, cy) {
       setFill(tone.accent);
-      rrect(IX, cy + 0.8, 3.6, 3.6, 0.9, "F");
+      rrect(IX, cy + 0.8, 3.6, 3.6, 0.6, "F");
       txt("Respuesta correcta: " + result.question.answer.join(", "), IX + 5.6, cy + 4, {
         style: "bold",
         size: TYPE.small.size,
@@ -550,12 +723,14 @@
     }
 
     function drawHint(lines, step, cy) {
-      var boxH = lines.length * step + 7;
-      setFill(C.card);
-      doc.rect(TINT_X, cy, TINT_W, boxH, "F");
-      setFill(C.badge);
+      var boxH = lines.length * step + 8;
+      setFill(C.amberWash);
+      setDraw(C.amberLine);
+      doc.setLineWidth(0.3);
+      rrect(TINT_X, cy, TINT_W, boxH, RADIUS.control, "FD");
+      setFill(C.amber);
       doc.rect(TINT_X, cy, 1.2, boxH, "F");
-      linesBlock(lines, TINT_X + 5.5, cy + 3.5, TYPE.quote.size, TYPE.quote.style, C.slate, step);
+      linesBlock(lines, TINT_X + 5.5, cy + 4, TYPE.quote.size, TYPE.quote.style, C.slate, step);
     }
 
     /**
@@ -595,10 +770,10 @@
       segs.forEach(function (seg) {
         doc.setPage(seg.page);
         setFill(tone.wash);
-        doc.rect(X0, seg.top, CONTENT_W, seg.bottom - seg.top, "F");
+        rrect(X0, seg.top, CONTENT_W, seg.bottom - seg.top, RADIUS.panel, "F");
         setDraw(tone.line);
         doc.setLineWidth(0.35);
-        doc.rect(X0, seg.top, CONTENT_W, seg.bottom - seg.top, "S");
+        rrect(X0, seg.top, CONTENT_W, seg.bottom - seg.top, RADIUS.panel, "S");
         setFill(tone.accent);
         doc.rect(X1 - BLOCK.rule, seg.top, BLOCK.rule, seg.bottom - seg.top, "F");
 
@@ -622,15 +797,24 @@
         doc.setLineWidth(0.3);
         doc.line(X0 + 16, FOOT_Y, X1, FOOT_Y);
         txt(
-          "Reglas de juego IHF - Catálogo de preguntas IHF (ES) + Resolución de preguntas (EN), jul 2025",
+          "Reglas de juego IHF · Catálogo de preguntas IHF (ES) + Resolución de preguntas (EN), jul 2025",
           X0,
-          FOOT_Y + 5.5,
+          FOOT_Y + 4.4,
           { size: TYPE.caption.size, color: C.muted },
         );
-        txt("Página " + p + " de " + total, X1, FOOT_Y + 5.5, {
+        txt("Test no oficial · Herramienta de estudio independiente no vinculada a la IHF.", X0, FOOT_Y + 8.4, {
+          size: TYPE.caption.size,
+          color: C.muted,
+        });
+        txt("Página " + p + " de " + total, X1, FOOT_Y + 4.4, {
           style: "bold",
           size: TYPE.caption.size,
           color: C.slate,
+          align: "right",
+        });
+        txt("non-official-ihf-rule-test.netlify.app", X1, FOOT_Y + 8.4, {
+          size: TYPE.caption.size,
+          color: C.muted,
           align: "right",
         });
       }
@@ -641,23 +825,31 @@
     summaryCard();
     legend();
 
-    var accepted = report.results.filter(function (r) {
-      return r.correct;
-    });
-    var failed = report.results.filter(function (r) {
-      return !r.correct;
+    var groups = { accepted: [], partial: [], failed: [] };
+    report.results.forEach(function (r) {
+      var status = statusOf(r);
+      if (status === "accepted") groups.accepted.push(r);
+      else if (status === "partial") groups.partial.push(r);
+      else groups.failed.push(r);
     });
 
-    if (accepted.length) {
-      sectionTitle("Preguntas aceptadas", accepted.length, toneFor(true));
-      accepted.forEach(function (r) {
+    if (groups.accepted.length) {
+      sectionTitle("Preguntas aceptadas", groups.accepted.length, STATUS.accepted);
+      groups.accepted.forEach(function (r) {
         drawBlock(r);
         y += BLOCK_GAP;
       });
     }
-    if (failed.length) {
-      sectionTitle("Preguntas falladas", failed.length, toneFor(false));
-      failed.forEach(function (r) {
+    if (groups.partial.length) {
+      sectionTitle("Preguntas parciales", groups.partial.length, STATUS.partial);
+      groups.partial.forEach(function (r) {
+        drawBlock(r);
+        y += BLOCK_GAP;
+      });
+    }
+    if (groups.failed.length) {
+      sectionTitle("Preguntas falladas", groups.failed.length, STATUS.failed);
+      groups.failed.forEach(function (r) {
         drawBlock(r);
         y += BLOCK_GAP;
       });
@@ -666,10 +858,16 @@
     footers();
 
     var stamp = new Date().toISOString().slice(0, 10);
-    var filename = "ihf-test-" + report.correct + "-" + report.total + "-" + stamp + ".pdf";
+    var filename = filenameFor(report, stamp);
     doc.save(filename);
     return filename;
   }
 
-  global.IHFPdf = { generate: generate, sanitize: sanitize };
+  global.IHFPdf = {
+    generate: generate,
+    sanitize: sanitize,
+    statusOf: statusOf,
+    filenameFor: filenameFor,
+    STATUS_LABELS: STATUS_LABELS,
+  };
 })(globalThis);
