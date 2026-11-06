@@ -104,3 +104,50 @@ test("the score counts answers, not questions", () => {
   assert.equal(report.passed, false);
   assert.equal(report.required, 3);
 });
+
+test("report exposes one shared classification per question", () => {
+  const pool = [
+    {
+      id: "9.1",
+      topic: "9",
+      text: "Multi answer",
+      options: [
+        { letter: "a", text: "Option A" },
+        { letter: "b", text: "Option B" },
+      ],
+      answer: ["a", "b"],
+      rules: "9:1",
+    },
+    {
+      id: "9.2",
+      topic: "9",
+      text: "Single answer",
+      options: [
+        { letter: "a", text: "Option A" },
+        { letter: "c", text: "Option C" },
+      ],
+      answer: ["a"],
+      rules: "9:2",
+    },
+    {
+      id: "9.3",
+      topic: "9",
+      text: "Unanswered",
+      options: [{ letter: "a", text: "Option A" }],
+      answer: ["a"],
+      rules: "9:3",
+    },
+  ];
+  const quiz = createQuiz({ pool, size: 3, rng: () => 0.5 });
+  const indexOf = (id) => quiz.items.findIndex((question) => question.id === id);
+
+  quiz.select(indexOf("9.1"), ["a"]); // partial sweep, no wrong letter
+  quiz.select(indexOf("9.2"), ["c"]); // wrong letter voids the question
+  // 9.3 stays unanswered
+
+  const report = quiz.report();
+  const statusById = Object.fromEntries(report.results.map((result) => [result.question.id, result.status]));
+
+  assert.deepEqual(statusById, { "9.1": "partial", "9.2": "wrong", "9.3": "unanswered" });
+  assert.equal(report.results.find((result) => result.question.id === "9.1").correct, false);
+});
