@@ -121,6 +121,7 @@
     var prevButton;
     var nextButton;
     var nextLabel;
+    var questionHeading = null;
     var pillNodes = [];
     var pillClasses = [];
     var pillCurrent = [];
@@ -281,7 +282,7 @@
         ),
         // The question is the screen's title: display face, one clear weight
         // step above the option copy (which stays in the body face).
-        el("h2", { id: "quiz-question", class: "mt-5 max-w-[70ch] font-display text-lg font-semibold leading-snug text-ink sm:text-xl", text: question.text }),
+        (questionHeading = el("h2", { id: "quiz-question", tabindex: "-1", class: "mt-5 max-w-[70ch] font-display text-lg font-semibold leading-snug text-ink outline-none sm:text-xl", text: question.text })),
         el("p", { class: "mt-3 text-xs font-medium text-slate-500", text: "Marca todas las respuestas correctas. Puede haber más de una." }),
         el("div", { class: "mt-3 space-y-3", role: "group", "aria-labelledby": "quiz-question", kids: optionNodes }),
         hint.panel,
@@ -289,12 +290,20 @@
 
       R.mount(cardHost, card);
       syncChrome();
+      // Move the reading position to the new question and announce it without
+      // a second scroll: the explicit scroll below owns the movement.
+      if (questionHeading) questionHeading.focus({ preventScroll: true });
     }
 
     function go(nextIndex) {
       if (nextIndex < 0 || nextIndex >= total) return;
       index = nextIndex;
       renderQuestion();
+      // On phones the "Siguiente" control sits in a sticky bar at the bottom;
+      // without this the next question would open already scrolled past.
+      var top = root.getBoundingClientRect().top + window.scrollY - 8;
+      if (top < 0) top = 0;
+      window.scrollTo({ top: top, behavior: R.reducedMotion() ? "auto" : "smooth" });
     }
 
     function finish() {
