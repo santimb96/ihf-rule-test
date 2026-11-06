@@ -56,7 +56,7 @@
         "data-action": "stats",
         "aria-label": "Mis estadísticas",
         class:
-          "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white",
+          "inline-flex h-11 items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white",
         on: {
           click: function () {
             if (!Screens.stats) return;
@@ -188,7 +188,11 @@
       syncThemeLabel();
       toggle.addEventListener("click", function () {
         var isDark = document.documentElement.classList.toggle("dark");
-        localStorage.setItem("theme", isDark ? "dark" : "light");
+        try {
+          localStorage.setItem("theme", isDark ? "dark" : "light");
+        } catch (error) {
+          // Private mode or a full quota: the choice still applies to this page.
+        }
         syncThemeLabel();
       });
     }
