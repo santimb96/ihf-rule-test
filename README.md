@@ -57,6 +57,8 @@ scripts/
   stats.js          per-browser attempt history + aggregations (no DOM)
   data.js           dataset access + guidelines parsing for hints
   hint.js           shared collapsible hint component
+  dialog.js         shared modal shell: focus trap, Escape, scroll lock
+  pdf-modal.js      in-app PDF viewer for rule and document links
   render.js         DOM helpers, screen switching, icons, toast
   screens/          setup / quiz / results / stats screens
   pdf.js            jsPDF report (header, summary, accepted + failed sections)

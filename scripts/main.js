@@ -171,12 +171,32 @@
     );
   }
 
+  // Every PDF link in the app (rule chips, "Ver en las Reglas de Juego", the
+  // footer sources) opens in the in-app viewer instead of a new tab. Modified
+  // clicks and middle clicks keep the browser's behaviour.
+  function interceptPdfLinks() {
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var target = event.target;
+      var link = target && target.closest ? target.closest("a[href]") : null;
+      if (!link) return;
+      // Inside a dialog (the viewer's own "Abrir en pestaña") the browser wins.
+      if (link.closest('[role="dialog"]')) return;
+      var href = link.getAttribute("href") || "";
+      if (!/\.pdf(?:[?#]|$)/i.test(href) || !global.IHFPdfModal) return;
+      event.preventDefault();
+      global.IHFPdfModal.open({ url: href, title: link.textContent.trim() });
+    });
+  }
+
   function boot() {
     if (!global.IHFData || !global.IHFScreens || !global.IHFQuiz) {
       renderFatal("Falta data/questions.js o algún módulo de scripts/. Recarga la página.");
       return;
     }
     showSetup();
+    interceptPdfLinks();
 
     var toggle = document.getElementById("theme-toggle");
     if (toggle) {

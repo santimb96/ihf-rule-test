@@ -296,20 +296,12 @@
     var trend = Stats.trend(attempts);
     var ruleData = Stats.byRule(attempts, questionsById);
 
-    var previousFocus = document.activeElement;
-    var previousOverflow = document.body.style.overflow;
-    var app = document.getElementById("app");
-    var appAriaHidden = app ? app.getAttribute("aria-hidden") : null;
     var closeTimer = null;
     var confirmingClear = false;
+    var handle = null;
 
-    var closeButton = el("button", {
-      type: "button",
-      class:
-        "grid h-10 w-10 shrink-0 place-items-center rounded border border-slate-200 bg-white text-slate-600 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white",
-      "aria-label": "Cerrar estadísticas",
-      on: { click: function () { close(); } },
-      kids: [R.icon("close", "h-4 w-4")],
+    var closeButton = global.IHFDialog.closeButton(function () {
+      if (handle) handle.close();
     });
 
     var clearButton = el("button", {
@@ -327,7 +319,7 @@
           if (closeTimer) clearTimeout(closeTimer);
           Stats.clear();
           var onCleared = options.onCleared;
-          close();
+          if (handle) handle.close();
           R.toast("Historial de estadísticas borrado");
           if (typeof onCleared === "function") onCleared();
         },
@@ -349,40 +341,33 @@
       kids: [R.icon("download", "h-3.5 w-3.5"), "Exportar JSON"],
     });
 
-    var dialog = el(
+    // Sticky: the dialog is the scroll container, so the way out stays
+    // reachable no matter how far the history scrolls.
+    var header = el(
       "div",
-      {
-        id: "stats-dialog",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-labelledby": "stats-title",
-        class:
-          "max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-md border border-slate-200/80 bg-white p-5 shadow-lift dark:border-slate-700 dark:bg-slate-900 sm:rounded-md sm:p-6" +
-          (R.reducedMotion() ? "" : " animate-pop-in"),
-      },
+      { class: "sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200/80 bg-white/95 px-5 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 sm:px-6" },
       el(
         "div",
-        { class: "flex items-start justify-between gap-4" },
+        { class: "flex min-w-0 items-start gap-3" },
+        el("span", {
+          class: "grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-brand-200",
+          kids: [R.icon("chart", "h-5 w-5")],
+        }),
         el(
           "div",
-          { class: "flex items-start gap-3" },
-          el("span", {
-            class: "grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-brand-200",
-            kids: [R.icon("chart", "h-5 w-5")],
-          }),
-          el(
-            "div",
-            null,
-            el("p", { class: "text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400", text: "Progreso de estudio" }),
-            el("h2", { id: "stats-title", class: "mt-0.5 font-display text-xl font-semibold text-ink dark:text-slate-100", text: "Tus estadísticas" }),
-            el("p", { class: "mt-1 text-xs text-slate-500 dark:text-slate-400", text: "Guardadas en este navegador. No se sincronizan entre dispositivos." }),
-          ),
+          { class: "min-w-0" },
+          el("p", { class: "text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400", text: "Progreso de estudio" }),
+          el("h2", { id: "stats-title", class: "mt-0.5 font-display text-xl font-semibold text-ink dark:text-slate-100", text: "Tus estadísticas" }),
+          el("p", { class: "mt-1 text-xs text-slate-500 dark:text-slate-400", text: "Guardadas en este navegador. No se sincronizan entre dispositivos." }),
         ),
-        closeButton,
       ),
+      closeButton,
+    );
+
+    var body = el("div", { class: "px-5 py-4 sm:px-6 sm:py-5" }, [
       el(
         "div",
-        { class: "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4" },
+        { class: "grid grid-cols-2 gap-3 sm:grid-cols-4" },
         [
           card("Tests", String(summary.attempts), summary.questions + " preguntas"),
           card("Media", pct(summary.averagePct), "del total"),
@@ -393,66 +378,24 @@
       el("div", { class: "mt-3 space-y-3" }, [trendBlock(trend), countsBlock(summary), historyBlock(attempts), rulesBlock(ruleData)]),
       el(
         "div",
-        { class: "mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-4 dark:border-slate-700" },
+        { class: "mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-4 dark:border-slate-700" },
         el("p", { class: "text-[11px] text-slate-500 dark:text-slate-400", text: "Exporta una copia antes de borrar: el historial solo vive en este navegador." }),
         el("div", { class: "flex flex-wrap gap-2" }, [exportButton, clearButton]),
       ),
-    );
+    ]);
 
-    var overlay = el(
-      "div",
-      {
-        class:
-          "fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-6" +
-          (R.reducedMotion() ? "" : " animate-fade-in"),
-        on: {
-          click: function (event) {
-            if (event.target === overlay) close();
-          },
-        },
+    handle = global.IHFDialog.open({
+      id: "stats-dialog",
+      labelledBy: "stats-title",
+      initialFocus: closeButton,
+      className:
+        "max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-md border border-slate-200/80 bg-white shadow-lift dark:border-slate-700 dark:bg-slate-900 sm:rounded-md" +
+        (R.reducedMotion() ? "" : " animate-pop-in"),
+      children: [header, body],
+      onClose: function () {
+        if (closeTimer) clearTimeout(closeTimer);
       },
-      dialog,
-    );
-
-    function onKeydown(event) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        close();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      var focusables = dialog.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
-      if (!focusables.length) return;
-      var first = focusables[0];
-      var last = focusables[focusables.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    function close() {
-      if (closeTimer) clearTimeout(closeTimer);
-      document.removeEventListener("keydown", onKeydown);
-      document.body.style.overflow = previousOverflow;
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      if (app) {
-        if (appAriaHidden === null) app.removeAttribute("aria-hidden");
-        else app.setAttribute("aria-hidden", appAriaHidden);
-      }
-      if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
-    }
-
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKeydown);
-    document.body.appendChild(overlay);
-    closeButton.focus();
-    // The dialog lives outside #app, so hiding the page tree from assistive
-    // technology keeps the modal as the only reachable content.
-    if (app) app.setAttribute("aria-hidden", "true");
+    });
   }
 
   global.IHFScreens = global.IHFScreens || {};
