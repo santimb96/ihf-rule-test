@@ -170,9 +170,15 @@
       return button;
     }
 
-    // No fabricated "≈ minutes" line: the picker shows only what is real —
-    // how many questions the test will have. Estimates without a source are
-    // exactly the kind of filler this screen should avoid.
+    // Reading-time estimate, kept deliberately secondary to the question count
+    // (the test length is the real figure; the minutes are an approximation).
+    function estimateMinutes(n) {
+      if (n <= 5) return 10;
+      if (n <= 10) return 15;
+      if (n <= 20) return 25;
+      return 35;
+    }
+
     function buildSizeButton(n) {
       var hint = el("span", { class: "block text-[11px] text-slate-500" });
       var button = el(
@@ -192,6 +198,10 @@
         },
         el("span", { class: "block font-display text-2xl font-bold text-ink", text: String(n) }),
         el("span", { class: "mt-0.5 block text-xs font-normal text-slate-500", text: "preguntas" }),
+        el("span", {
+          class: "mt-1 block text-xs font-medium text-slate-500",
+          text: estimateMinutes(n) + " minutos aprox.",
+        }),
         hint,
       );
       sizeNodes.push({ size: n, button: button, hint: hint });
