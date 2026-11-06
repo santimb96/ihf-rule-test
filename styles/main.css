@@ -1,8 +1,10 @@
 /* Build entry: compiled Tailwind layers plus the self-hosted variable fonts.
    styles/styles.css is loaded as a separate sheet after this file so the
    custom layer keeps overriding utilities, as documented at its top. */
+/* Body copy stays neutral (Inter); headings get a voice: Archivo, a sturdy
+   grotesque with its own personality (not the AI-default sans trio). */
 @import "@fontsource-variable/inter/index.css";
-@import "@fontsource-variable/sora/index.css";
+@import "@fontsource-variable/archivo/standard.css";
 
 @tailwind base;
 @tailwind components;

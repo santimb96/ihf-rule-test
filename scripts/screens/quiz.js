@@ -12,13 +12,74 @@
 
   function openConfirm(opts) {
     var overlay;
+    var dialog;
+    var cancelButton;
+    // Focus starts inside the dialog and goes back to the trigger on close,
+    // so keyboard and screen-reader users do not have to hunt for it.
+    var restoreTo = document.activeElement;
+
+    function focusables() {
+      return Array.prototype.slice
+        .call(dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter(function (node) {
+          return !node.disabled && node.offsetParent !== null;
+        });
+    }
+
     function close() {
       overlay.remove();
       document.removeEventListener("keydown", onKey);
+      if (restoreTo && typeof restoreTo.focus === "function") restoreTo.focus();
     }
+
     function onKey(e) {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      var items = focusables();
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
+
+    dialog = el(
+      "div",
+      { class: "w-full max-w-sm rounded-md bg-white p-6 shadow-lift animate-pop-in", role: "dialog", "aria-modal": "true", "aria-labelledby": "confirm-dialog-title" },
+      el("h3", { id: "confirm-dialog-title", class: "font-display text-lg font-semibold text-ink", text: opts.title }),
+      el("p", { class: "mt-2 text-sm leading-relaxed text-slate-600", text: opts.message }),
+      el(
+        "div",
+        { class: "mt-5 flex justify-end gap-3" },
+        (cancelButton = el("button", {
+          type: "button",
+          class: "rounded border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50",
+          on: { click: close },
+          text: opts.cancelText || "Cancelar",
+        })),
+        el("button", {
+          type: "button",
+          class:
+            "rounded px-4 py-2 text-sm font-semibold text-white transition " +
+            (opts.danger ? "bg-rose-600 hover:bg-rose-500" : "bg-brand-600 hover:bg-brand-500"),
+          on: {
+            click: function () {
+              close();
+              opts.onConfirm();
+            },
+          },
+          text: opts.confirmText,
+        }),
+      ),
+    );
     overlay = el(
       "div",
       {
@@ -29,38 +90,11 @@
           },
         },
       },
-      el(
-        "div",
-        { class: "w-full max-w-sm rounded-3xl bg-white p-6 shadow-lift animate-pop-in", role: "dialog", "aria-modal": "true" },
-        el("h3", { class: "font-display text-lg font-semibold text-ink", text: opts.title }),
-        el("p", { class: "mt-2 text-sm leading-relaxed text-slate-600", text: opts.message }),
-        el(
-          "div",
-          { class: "mt-5 flex justify-end gap-3" },
-          el("button", {
-            type: "button",
-            class: "rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50",
-            on: { click: close },
-            text: opts.cancelText || "Cancelar",
-          }),
-          el("button", {
-            type: "button",
-            class:
-              "rounded-xl px-4 py-2 text-sm font-semibold text-white transition " +
-              (opts.danger ? "bg-rose-600 hover:bg-rose-500" : "bg-brand-600 hover:bg-brand-500"),
-            on: {
-              click: function () {
-                close();
-                opts.onConfirm();
-              },
-            },
-            text: opts.confirmText,
-          }),
-        ),
-      ),
+      dialog,
     );
     document.body.appendChild(overlay);
     document.addEventListener("keydown", onKey);
+    cancelButton.focus();
   }
 
   function mount(root, ctx) {
@@ -70,13 +104,13 @@
     var startTime = Date.now();
     var timerInterval = null;
 
-    var PILL_CLASS = "h-11 min-w-[44px] rounded-lg px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
+    var PILL_CLASS = "h-11 min-w-[44px] rounded px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]";
     var fill = el("div", { class: "progress-fill h-full rounded-full", style: { width: "0%" } });
     var counter = el("span", { class: "font-display text-sm font-semibold text-ink" });
     var answeredLabel = el("span", { class: "text-xs font-medium text-slate-500" });
     var timerTextSpan = el("span", { class: "font-display font-semibold tracking-normal text-xs" });
     var timerLabel = el("span", { 
-      class: "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200",
+      class: "inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200",
       kids: [
         R.icon("clock", "h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400"),
         timerTextSpan
@@ -126,7 +160,7 @@
           ? " bg-brand-600 text-white shadow-card"
           : done
             ? " bg-brand-100 text-brand-700 hover:bg-brand-200"
-            : " bg-slate-100 text-slate-500 hover:bg-slate-200")
+            : " bg-slate-100 text-slate-600 hover:bg-slate-200")
       );
     }
 
@@ -159,7 +193,7 @@
 
     function optionClass(on) {
       return (
-        "option flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left " +
+        "option flex w-full items-center gap-3 rounded border px-4 py-3.5 text-left " +
         (on
           ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-900/40"
           : "border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60")
@@ -168,14 +202,14 @@
 
     function checkBoxClass(on) {
       return (
-        "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition " +
+        "grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition " +
         (on ? "border-brand-600 bg-brand-600" : "border-slate-300 bg-transparent dark:border-slate-600")
       );
     }
 
     function letterClass(on) {
       return (
-        "option-letter grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold transition " +
+        "option-letter grid h-7 w-7 shrink-0 place-items-center rounded text-xs font-bold transition " +
         (on
           ? "bg-brand-600 text-white"
           : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200")
@@ -227,7 +261,7 @@
 
       var card = el(
         "article",
-        { class: "rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6 animate-fade-up", "data-qid": question.id },
+        { class: "rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6 animate-fade-up", "data-qid": question.id },
         el(
           "div",
           { class: "flex flex-wrap items-center justify-between gap-3" },
@@ -235,7 +269,7 @@
             "div",
             { class: "flex flex-wrap items-center gap-2" },
             el("span", {
-              class: "rounded-lg bg-brand-600 px-2 py-1 font-display text-xs font-bold text-white",
+              class: "rounded bg-brand-600 px-2 py-1 font-display text-xs font-bold text-white",
               text: question.id,
             }),
             el("span", {
@@ -245,7 +279,9 @@
           ),
           hint.button,
         ),
-        el("h2", { id: "quiz-question", class: "mt-5 max-w-[70ch] text-base font-medium leading-relaxed text-ink sm:text-lg", text: question.text }),
+        // The question is the screen's title: display face, one clear weight
+        // step above the option copy (which stays in the body face).
+        el("h2", { id: "quiz-question", class: "mt-5 max-w-[70ch] font-display text-lg font-semibold leading-snug text-ink sm:text-xl", text: question.text }),
         el("p", { class: "mt-3 text-xs font-medium text-slate-500", text: "Marca todas las respuestas correctas. Puede haber más de una." }),
         el("div", { class: "mt-3 space-y-3", role: "group", "aria-labelledby": "quiz-question", kids: optionNodes }),
         hint.panel,
@@ -305,7 +341,7 @@
 
     var topbar = el(
       "div",
-      { class: "rounded-3xl border border-slate-200/80 bg-white p-4 shadow-card sm:p-5" },
+      { class: "rounded-md border border-slate-200/80 bg-white p-4 shadow-card sm:p-5" },
       el(
         "div",
         { class: "flex flex-wrap items-center justify-between gap-3" },
@@ -313,7 +349,7 @@
           "button",
           {
             type: "button",
-            class: "inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-rose-300 hover:text-rose-600",
+            class: "inline-flex items-center gap-1.5 rounded border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-rose-300 hover:text-rose-600",
             "data-action": "exit",
             on: { click: exit },
             kids: [R.icon("close", "h-4 w-4"), "Salir"],
@@ -349,7 +385,7 @@
       {
         type: "button",
         "data-action": "prev",
-        class: "inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white dark:disabled:text-slate-500",
+        class: "inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white dark:disabled:text-slate-500",
         on: {
           click: function () {
             go(index - 1);
@@ -366,7 +402,7 @@
         type: "button",
         "data-action": "next",
         class:
-          "group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95",
+          "group inline-flex items-center gap-2 rounded bg-gradient-to-r from-brand-600 to-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95",
         on: {
           click: function () {
             if (index === total - 1) finish();
@@ -379,12 +415,19 @@
 
     var nav = el(
       "div",
-      { class: "quiz-nav sticky bottom-3 z-30 mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-lift backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" },
+      { class: "quiz-nav sticky bottom-3 z-30 mt-4 flex items-center justify-between gap-3 rounded-md border border-slate-200/80 bg-white/95 p-2 shadow-lift backdrop-blur dark:border-slate-700 dark:bg-slate-900/95" },
       prevButton,
       nextButton,
     );
 
-    R.mount(root, [topbar, cardHost, nav]);
+    // The screen's only heading sits at h2 (the question); the page needs an
+    // h1 for its outline, but the topbar already carries the context visually.
+    R.mount(root, [
+      el("h1", { class: "sr-only", text: "Test de preguntas de las Reglas de Juego" }),
+      topbar,
+      cardHost,
+      nav,
+    ]);
     renderQuestion();
   }
 

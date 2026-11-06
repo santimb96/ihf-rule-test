@@ -1,6 +1,6 @@
 /**
- * Entry point: wires the three screens, owns the attempt lifecycle
- * (setup -> quiz -> results -> PDF/retry/new) and the header statistics.
+ * Entry point: wires the three screens and owns the attempt lifecycle
+ * (setup -> quiz -> results -> PDF/retry/new).
  */
 (function (global) {
   "use strict";
@@ -13,23 +13,6 @@
 
   function screenNode(id) {
     return document.getElementById(id);
-  }
-
-  function renderHeaderStats() {
-    var host = document.getElementById("header-stats");
-    [
-      D.meta.questionCount + " preguntas",
-      D.topics().length + " temas",
-      "Aprobado ≥ 75%",
-    ].forEach(function (text) {
-      R.append(
-        host,
-        R.el("span", {
-          class: "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300",
-          text: text,
-        }),
-      );
-    });
   }
 
   function showSetup() {
@@ -119,7 +102,7 @@
       screenNode("screen-setup"),
       R.el(
         "div",
-        { class: "rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center shadow-card" },
+        { class: "rounded-md border border-rose-200 bg-rose-50 p-8 text-center shadow-card" },
         R.el("h1", { class: "font-display text-xl font-semibold text-rose-700", text: "No se pudo cargar el catálogo" }),
         R.el("p", { class: "mt-2 text-sm text-rose-600", text: message }),
       ),
@@ -131,7 +114,6 @@
       renderFatal("Falta data/questions.js o algún módulo de scripts/. Recarga la página.");
       return;
     }
-    renderHeaderStats();
     showSetup();
 
     var toggle = document.getElementById("theme-toggle");

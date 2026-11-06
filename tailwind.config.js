@@ -1,8 +1,15 @@
 /**
  * Tailwind theme, moved verbatim from the inline `tailwind.config` that the
- * Play CDN carried in index.html. `fontFamily` points at the fontsource
- * variable families (Sora Variable / Inter Variable) with the old static
- * names kept as fallbacks.
+ * Play CDN carried in index.html. `fontFamily` splits the two roles: Archivo
+ * (grotesque with character) owns every heading and display number, Inter
+ * stays the neutral face for body copy only.
+ *
+ * Radius scale (kept consistent across screens — do not invent new steps):
+ *   rounded-md 6px  · surfaces: hero panels, cards, sticky bars, dialogs
+ *   rounded 4px     · controls: buttons, option rows, chips, tabs, badges
+ *   rounded-full    · status pills, tags and progress bars only
+ * Subtle rounding on surfaces keeps panels from looking either AI-default
+ * (12px/16px on every box) or polygonal.
  */
 module.exports = {
   darkMode: "class",
@@ -10,7 +17,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Sora Variable", "Sora", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Archivo Variable", "Archivo", "Helvetica Neue", "ui-sans-serif", "sans-serif"],
         sans: ["Inter Variable", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {

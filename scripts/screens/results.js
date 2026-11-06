@@ -45,8 +45,8 @@
       var state = OPTION_STATE[inKey && picked ? "hit" : inKey ? "missed" : picked ? "wrong" : "plain"];
       return el(
         "li",
-        { class: "flex items-center gap-2.5 rounded-xl border px-3 py-2 " + state.tone },
-        el("span", { class: "grid h-6 w-6 shrink-0 place-items-center rounded-md text-[11px] font-bold " + state.badge, text: opt.letter }),
+        { class: "flex items-center gap-2.5 rounded border px-3 py-2 " + state.tone },
+        el("span", { class: "grid h-6 w-6 shrink-0 place-items-center rounded text-[11px] font-bold " + state.badge, text: opt.letter }),
         el("span", { class: "flex-1 text-xs leading-relaxed " + state.text, text: opt.text }),
         state.icon ? R.icon(state.icon, "h-4 w-4 shrink-0 " + state.iconCls) : null,
       );
@@ -61,20 +61,20 @@
       el("span", { class: "inline-flex items-center gap-2" }, [
         el("span", { class: "text-slate-500", text: "Tu respuesta" }),
         el("span", {
-          class: "rounded-md px-2 py-1 font-bold " + status.tone,
+          class: "rounded px-2 py-1 font-bold " + status.tone,
           text: unanswered ? "sin responder" : result.selected.join(", "),
         }),
       ]),
       el("span", { class: "inline-flex items-center gap-2" }, [
         el("span", { class: "text-slate-500", text: "Respuesta correcta" }),
-        el("span", { class: "rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300", text: q.answer.join(", ") }),
+        el("span", { class: "rounded bg-emerald-100 px-2 py-1 font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300", text: q.answer.join(", ") }),
       ]),
     );
 
     return el(
       "article",
       {
-        class: "review-card relative rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800",
+        class: "review-card relative rounded-md border border-slate-200 bg-white p-4 shadow-card dark:border-slate-800",
       },
       el(
         "div",
@@ -89,12 +89,14 @@
               class: "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide " + status.tone,
               kids: [R.icon(status.icon, "h-3.5 w-3.5"), status.label],
             }),
-            el("span", { class: "rounded-md bg-brand-600 px-1.5 py-0.5 font-display text-[11px] font-bold text-white", text: q.id }),
+            el("span", { class: "rounded bg-brand-600 px-1.5 py-0.5 font-display text-[11px] font-bold text-white", text: q.id }),
             el("span", { class: "rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300", text: D.topicLabel(q.topic) }),
           ),
           hint.button,
         ),
-        el("p", { class: "mt-3 max-w-[70ch] text-sm font-medium leading-relaxed text-ink", text: q.text }),
+        // Review questions are read, not scanned: ~60ch keeps every line
+        // under 80 characters instead of the ~92 the full card width gave.
+        el("p", { class: "mt-3 max-w-[60ch] text-sm font-medium leading-relaxed text-ink", text: q.text }),
         el("ul", { class: "mt-3 space-y-2", kids: optionRows }),
         answerLine,
         hint.panel,
@@ -168,14 +170,14 @@
         listHost,
         nodes.length
           ? nodes
-          : [el("p", { class: "rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500", text: "No hay preguntas en esta categoría." })],
+          : [el("p", { class: "rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500", text: "No hay preguntas en esta categoría." })],
       );
       listHost.classList.toggle("is-long", nodes.length >= 12);
     }
 
     function tabClass(active) {
       return (
-        "rounded-xl px-4 py-2 text-sm font-semibold transition " +
+        "rounded px-4 py-2 text-sm font-semibold transition " +
         (active ? "bg-brand-600 text-white shadow-card" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800")
       );
     }
@@ -218,11 +220,11 @@
 
     // Fail: studying the misses is the primary action. Pass: the record (PDF) is.
     var PRIMARY_CLASS =
-      "group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0";
+      "group inline-flex items-center justify-center gap-2 rounded bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lift transition hover:-translate-y-0.5 active:translate-y-0 active:brightness-95 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0";
     var SECONDARY_CLASS =
-      "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-wait disabled:opacity-60";
+      "inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 active:translate-y-px disabled:cursor-wait disabled:opacity-60";
     var DANGER_CLASS =
-      "inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 active:translate-y-px dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60";
+      "inline-flex items-center justify-center gap-2 rounded border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 active:translate-y-px dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60";
 
     // Download owns a busy state: the PDF generator is fetched on demand, so the
     // button reports the wait and returns a retry when the fetch fails.
@@ -292,17 +294,17 @@
       "section",
       {
         class:
-          "relative overflow-hidden rounded-3xl border p-6 shadow-lift sm:p-8 animate-fade-up " +
+          "relative overflow-hidden rounded-md border p-6 shadow-lift sm:p-8 animate-fade-up " +
           (report.passed
             ? "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50/70 dark:border-emerald-900 dark:from-emerald-950 dark:via-slate-900 dark:to-slate-950"
             : "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50/60 dark:border-rose-900 dark:from-rose-950 dark:via-slate-900 dark:to-slate-950"),
       },
-      el("div", {
-        class: "pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-2xl " + (report.passed ? "bg-emerald-300/30 dark:bg-emerald-500/10" : "bg-rose-300/30 dark:bg-rose-500/10"),
-      }),
       el(
         "div",
-        { class: "relative flex flex-col items-center gap-6 px-3 sm:flex-row sm:gap-8 sm:pr-0" },
+        // The three-column hero (ring · copy · actions) needs real width for
+        // the display headline; below lg it stacks, which is also the better
+        // reading order on tablets.
+        { class: "relative flex flex-col items-center gap-6 px-3 lg:flex-row lg:gap-8 lg:pr-0" },
         el(
           "div",
           { class: "relative h-36 w-36 shrink-0" },
@@ -321,12 +323,12 @@
         ),
         el(
           "div",
-          { class: "min-w-0 flex-1 text-center sm:text-left" },
+          { class: "min-w-0 flex-1 text-center lg:text-left" },
           el("span", {
             class: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider " + (report.passed ? "bg-emerald-700 text-white" : "bg-rose-700 text-white"),
             kids: [R.icon(report.passed ? "check" : "x", "h-3.5 w-3.5"), report.passed ? "Aprobado" : "No aprobado"],
           }),
-          el("h1", { class: "mt-3 font-display text-2xl font-bold text-ink text-balance sm:text-3xl", text: report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!" }),
+          el("h1", { class: "mt-3 font-display text-3xl font-bold text-ink text-balance sm:text-4xl", text: report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!" }),
           el("p", { class: "mt-2 text-sm leading-relaxed text-slate-600" }, [
             "Has acertado ",
             el("strong", { class: "font-semibold text-ink", text: report.score + " de " + report.totalAnswers + " respuestas" }),
@@ -336,7 +338,7 @@
           ]),
           el(
             "div",
-            { class: "mt-4 flex flex-wrap justify-center gap-2 sm:justify-start" },
+            { class: "mt-4 flex flex-wrap justify-center gap-2 lg:justify-start" },
             [
               config.size + " preguntas",
               topicSummary,
@@ -350,7 +352,7 @@
         ),
         el(
           "div",
-          { class: "flex w-full flex-col gap-2.5 sm:w-auto sm:shrink-0" },
+          { class: "flex w-full flex-col gap-2.5 lg:w-auto lg:shrink-0" },
           (report.passed ? [downloadButton, retryFailedButton, retryButton, newButton] : [retryFailedButton, downloadButton, retryButton, newButton]).filter(Boolean),
         ),
       ),
@@ -365,11 +367,12 @@
       );
     }
 
+    // A legend is a reading aid, not a container: plain row, no box.
     var legend = el(
       "div",
       {
         class:
-          "mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-slate-200/80 bg-white px-4 py-2.5 text-[11px] font-medium text-slate-600 shadow-card dark:border-slate-800",
+          "mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-slate-600 dark:text-slate-400",
       },
       [
         legendItem("bg-emerald-500", "Acertada"),
@@ -388,7 +391,7 @@
         el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Revisión del test" }),
         el(
           "div",
-          { class: "flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-card dark:border-slate-800" },
+          { class: "flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-1 dark:border-slate-800" },
           buildTab("all", "Todas", report.total),
           buildTab("correct", "Aciertos", report.correct),
           buildTab("failed", "Fallos", report.total - report.correct),

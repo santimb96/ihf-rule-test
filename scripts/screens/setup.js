@@ -97,7 +97,7 @@
       var noteClass;
       if (available < 5) {
         note = "Necesitas al menos 5 preguntas: selecciona más temas.";
-        noteClass = "text-xs font-medium text-rose-600";
+        noteClass = "text-xs font-medium text-rose-700";
       } else {
         note = "Aprobado con ≥75% de las respuestas · " + size + " preguntas";
         noteClass = "text-xs text-slate-500";
@@ -110,7 +110,7 @@
 
     function chipClass(on) {
       return (
-        "option flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left " +
+        "option flex w-full items-center gap-3 rounded border px-3.5 py-3 text-left " +
         (on
           ? "border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-900/40"
           : "border-slate-200 bg-white hover:border-brand-300 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/60")
@@ -120,7 +120,7 @@
     // Rule codes read as codes, not as counters, so they ship in the data face.
     function chipBadge(on) {
       return (
-        "grid h-8 min-w-8 shrink-0 place-items-center rounded-md border px-1.5 font-mono text-xs font-semibold tabular-nums transition " +
+        "grid h-8 min-w-8 shrink-0 place-items-center rounded border px-1.5 font-mono text-xs font-semibold tabular-nums transition " +
         (on
           ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-700 dark:bg-brand-900/60 dark:text-brand-200"
           : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400")
@@ -129,7 +129,7 @@
 
     function chipCheck(on) {
       return (
-        "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition " +
+        "grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition " +
         (on
           ? "border-brand-600 bg-brand-600"
           : "border-slate-300 bg-transparent dark:border-slate-600")
@@ -162,7 +162,7 @@
           "span",
           { class: "min-w-0 flex-1" },
           el("span", { class: "block text-sm font-semibold leading-snug text-ink", text: topic.label }),
-          el("span", { class: "block text-xs text-slate-500", text: count + (count === 1 ? " pregunta" : " preguntas") }),
+          el("span", { class: "block text-xs text-slate-600", text: count + (count === 1 ? " pregunta" : " preguntas") }),
         ),
         check,
       );
@@ -170,13 +170,9 @@
       return button;
     }
 
-    function calculateTime(n){
-        if (n <= 5) return 10;
-        if (n <= 10) return 15;
-        if (n <= 20) return 25;
-        return 35;
-    }
-
+    // No fabricated "≈ minutes" line: the picker shows only what is real —
+    // how many questions the test will have. Estimates without a source are
+    // exactly the kind of filler this screen should avoid.
     function buildSizeButton(n) {
       var hint = el("span", { class: "block text-[11px] text-slate-500" });
       var button = el(
@@ -185,7 +181,7 @@
           type: "button",
           "data-size": String(n),
           "aria-pressed": "false",
-          class: "option group relative rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center transition",
+          class: "option group relative rounded border border-slate-200 bg-white px-4 py-4 text-center transition",
           on: {
             click: function () {
               if (button.disabled) return;
@@ -194,52 +190,80 @@
             },
           },
         },
-        el("span", { class: "block font-display text-3xl font-bold text-ink", text: String(n) }),
+        el("span", { class: "block font-display text-2xl font-bold text-ink", text: String(n) }),
         el("span", { class: "mt-0.5 block text-xs font-normal text-slate-500", text: "preguntas" }),
-        el("strong", { class: "mt-0.5 block text-xs font-semibold text-slate-500", text: calculateTime(n) + " minutos apróx." }),
         hint,
       );
       sizeNodes.push({ size: n, button: button, hint: hint });
       return button;
     }
 
+    // Background texture with intent: a regulation handball court drawn in
+    // line art, cropped by the hero. Replaces the two blurred colour blobs
+    // that were pure filler behind the headline.
+    var courtSvg = el("svg", {
+      viewBox: "0 0 400 200",
+      width: "820",
+      height: "410",
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": "3",
+      "aria-hidden": "true",
+      focusable: "false",
+      kids: [
+        el("rect", { x: "1.5", y: "1.5", width: "397", height: "197" }),
+        el("line", { x1: "200", y1: "1.5", x2: "200", y2: "198.5" }),
+        el("path", { d: "M1.5 25 A60 60 0 0 1 60 85 L60 115 A60 60 0 0 1 1.5 175" }),
+        el("path", { d: "M398.5 25 A60 60 0 0 0 340 85 L340 115 A60 60 0 0 0 398.5 175" }),
+        el("line", { x1: "1.5", y1: "85", x2: "1.5", y2: "115", "stroke-width": "9" }),
+        el("line", { x1: "398.5", y1: "85", x2: "398.5", y2: "115", "stroke-width": "9" }),
+      ],
+    });
+
     var hero = el(
       "div",
-      { class: "relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-6 text-white shadow-lift sm:p-8" },
+      { class: "relative overflow-hidden rounded-md bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-6 text-white shadow-lift sm:p-8" },
       el("div", {
-        class: "pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent-400/25 blur-2xl",
-      }),
-      el("div", {
-        class: "pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-brand-400/30 blur-2xl",
+        class: "pointer-events-none absolute -right-20 top-1/2 hidden -translate-y-1/2 text-white opacity-[0.15] sm:block",
+        kids: [courtSvg],
       }),
       el(
         "div",
-        { class: "relative" },
-        el("h1", { class: "font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
-        el("p", {
-          class: "mt-3 max-w-2xl text-sm leading-relaxed text-brand-100/90 sm:text-base",
-          text: D.meta.questionCount +
-            " preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.",
-        }),
+        { class: "relative flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10" },
         el(
           "div",
-          { class: "mt-5 flex flex-wrap gap-2" },
-          [
-            D.meta.questionCount + " preguntas",
-            D.topics().length + " temas",
-          ].map(function (text) {
-            return el("span", {
-              class: "rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium text-white/95 backdrop-blur",
-              text: text,
-            });
+          { class: "min-w-0 flex-1" },
+          el("h1", { class: "font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
+          el("p", {
+            class: "mt-3 max-w-xl text-sm leading-relaxed text-brand-100/90 sm:text-base",
+            text: D.meta.questionCount +
+              " preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.",
           }),
+          // No "200 preguntas · 19 temas" pill row: the sentence above already
+          // states those figures with their source. A second strip of bare
+          // numbers is decoration, not information.
+        ),
+        // Real product screenshot (no stock imagery): the results screen of a
+        // genuine test run, captured from this build.
+        el(
+          "figure",
+          { class: "shrink-0 lg:w-[440px]" },
+          el("img", {
+            src: "assets/screenshots/results-screen.png",
+            alt: "Pantalla de resultados de un test: anillo con el porcentaje de aciertos, botones para descargar el informe PDF o repetir el test y revisión pregunta a pregunta",
+            width: "1440",
+            height: "900",
+            decoding: "async",
+            class: "w-full border border-white/25 shadow-2xl",
+          }),
+          el("figcaption", { class: "mt-2 text-[11px] leading-snug text-white/60", text: "Así se ve el informe al terminar un test." }),
         ),
       ),
     );
 
     var topicsCard = el(
       "section",
-      { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
+      { class: "mt-6 rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
       el(
         "div",
         { class: "flex flex-wrap items-start justify-between gap-3" },
@@ -260,7 +284,7 @@
             {
               type: "button",
               "data-action": "toggle-all",
-              class: "rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
+              class: "rounded border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
               on: {
                 click: function () {
                   if (selected.size === topics.length) selected.clear();
@@ -278,7 +302,7 @@
               "data-action": "toggle-topics",
               "aria-expanded": "false",
               "aria-controls": "topic-grid",
-              class: "rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
+              class: "rounded border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700 active:translate-y-px dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-500 dark:hover:bg-brand-900/40 dark:hover:text-brand-200",
               on: {
                 click: function () {
                   topicsExpanded = !topicsExpanded;
@@ -305,7 +329,7 @@
 
     var sizesCard = el(
       "section",
-      { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
+      { class: "mt-6 rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
       el(
         "div",
         { class: "flex items-start gap-3" },
@@ -331,7 +355,7 @@
         type: "button",
         "data-action": "start",
         class:
-          "group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 px-7 py-3.5 font-semibold text-white shadow-lift transition hover:-translate-y-0.5 hover:from-brand-500 hover:to-brand-400 active:translate-y-0 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto",
+          "group inline-flex w-full items-center justify-center gap-2 rounded bg-gradient-to-r from-brand-600 to-brand-500 px-7 py-3.5 font-semibold text-white shadow-lift transition hover:-translate-y-0.5 hover:from-brand-500 hover:to-brand-400 active:translate-y-0 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto",
         on: {
           click: function () {
             if (startButton.disabled) return;
@@ -346,14 +370,16 @@
     // scrolls, then it settles into the page flow at its natural position.
     var summary = el(
       "div",
-      { class: "sticky bottom-3 z-30 mt-6 flex flex-col gap-4 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-lift backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-between sm:bg-white dark:border-slate-700 dark:bg-slate-900/95 sm:dark:bg-slate-900" },
+      { class: "sticky bottom-3 z-30 mt-6 flex flex-col gap-4 rounded-md border border-slate-200/80 bg-white/95 p-5 shadow-lift backdrop-blur sm:static sm:flex-row sm:items-center sm:justify-between sm:bg-white dark:border-slate-700 dark:bg-slate-900/95 sm:dark:bg-slate-900" },
       el("div", null, poolLabel, poolNote),
       startButton,
     );
 
+    // Supplementary context, deliberately not another floating card: the page
+    // already has two tool panels, so this closes with a rule instead.
     var gitHubCard = el(
       "section",
-      { class: "mt-6 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-card sm:p-6" },
+      { class: "mt-8 border-t border-slate-200 pt-6 dark:border-slate-800" },
       el(
         "div",
         { class: "flex items-center gap-3" },
@@ -361,7 +387,7 @@
         el("h2", { class: "font-display text-lg font-semibold text-ink", text: "Sobre este proyecto" }),
       ),
       el("p", {
-        class: "mt-3 max-w-2xl text-sm leading-relaxed text-slate-500",
+        class: "mt-3 max-w-lg text-sm leading-relaxed text-slate-500",
         text: "Esta web es una herramienta de estudio que no está vinculada con ningún organismo oficial. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto y compartirlo si te ha sido de utilidad!",
       }),
       el(

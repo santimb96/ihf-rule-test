@@ -30,10 +30,10 @@ html.dark {
 
 html.dark body {
   background-color: #030712;
-  background-image:
-    radial-gradient(900px 480px at 12% -8%, rgba(59, 94, 255, 0.12), transparent 60%),
-    radial-gradient(760px 420px at 96% 4%, rgba(245, 158, 11, 0.08), transparent 55%),
-    linear-gradient(180deg, #030712 0%, #0b0f19 100%);
+  /* Flat gradient base only: the two blurred radial "blobs" that used to sit
+     here were filler. If the page background ever needs more, it should be an
+     image or a texture with intent (see the court line art in the hero). */
+  background-image: linear-gradient(180deg, #030712 0%, #0b0f19 100%);
   color: #f1f5f9;
 }
 
@@ -142,12 +142,12 @@ html.dark button[data-action="hint"]:not(.hint-link):hover {
   border-color: rgba(245, 158, 11, 0.6) !important;
 }
 
-html.dark .hint-panel .rounded-2xl {
+html.dark .hint-panel .hint-box {
   border-color: rgba(245, 158, 11, 0.25) !important;
   background: linear-gradient(to bottom right, rgba(30, 27, 20, 0.9), rgba(17, 24, 39, 0.95)) !important;
 }
 
-html.dark .hint-panel .text-amber-600 {
+html.dark .hint-panel .text-amber-800 {
   color: #fbbf24 !important;
 }
 
@@ -181,6 +181,25 @@ html.dark .hint-panel .text-slate-600 {
 
 html.dark .hint-panel .text-slate-500 {
   color: #cbd5e1 !important;
+}
+
+/* Neutral elevation on dark surfaces: the brand-blue `shadow-lift` glow reads
+   as a chromatic halo against #030712 (and is the tell of a preset shadow),
+   so dark mode gets a real cast shadow instead. Styles load after Tailwind,
+   and the two-class selector outranks the utility anyway. */
+html.dark .shadow-lift {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 40px -18px rgba(0, 0, 0, 0.75);
+}
+
+html.dark .shadow-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Body copy keeps a comfortable measure and pulls a word down beside a lone
+   last word; headings opt into `text-balance` where they already do. */
+main p,
+footer p {
+  text-wrap: pretty;
 }
 
 /* --- collapsible hint --------------------------------------------------- */
@@ -341,10 +360,12 @@ button.size-active {
   color: #1e33b8;
 }
 
+/* The outline already follows the element's own border-radius in every
+   current engine; forcing a radius here would flatten focused pills and
+   cards to 4px for as long as they stay focused. */
 :focus-visible {
   outline: 2px solid #3b5eff;
   outline-offset: 2px;
-  border-radius: 6px;
 }
 
 /* Gradient CTAs sit on dark fills, so they need a light ring to stay visible. */

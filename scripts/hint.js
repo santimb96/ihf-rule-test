@@ -43,19 +43,19 @@
         null,
         R.el(
           "div",
-          { class: "mt-4 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-amber-50/60 p-4 shadow-card animate-fade-in" },
+          { class: "mt-4 hint-box rounded-md border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-amber-50/60 p-4 shadow-card animate-fade-in" },
           R.el(
             "div",
             { class: "flex flex-wrap items-start justify-between gap-3" },
             R.el(
               "div",
               { class: "min-w-0" },
-              R.el("p", { class: "text-[11px] font-semibold uppercase tracking-wider text-amber-600", text: "Pista · directrices de la respuesta" }),
+              R.el("p", { class: "text-[11px] font-semibold uppercase tracking-wider text-amber-800", text: "Pista · directrices de la respuesta" }),
               R.el("div", { class: "mt-2 flex flex-wrap gap-2", kids: chips.map(function(c) { return chipNode(c, question); }) }),
             ),
             firstLink
               ? R.el("a", {
-                  class: "inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100",
+                  class: "inline-flex shrink-0 items-center gap-1.5 rounded border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100",
                   href: firstLink.page ? D.rulesUrl(firstLink.page) : "#",
                   target: "_blank",
                   rel: "noopener",
@@ -64,7 +64,7 @@
               : null,
           ),
           R.el("p", {
-            class: "mt-2 text-xs leading-relaxed text-slate-500",
+            class: "mt-2 max-w-lg text-xs leading-relaxed text-slate-500",
             text: "El catálogo de respuestas cita estas directrices como fundamento de la respuesta correcta.",
           }),
         ),
@@ -78,8 +78,8 @@
         "aria-expanded": "false",
         "data-action": "hint",
         class: subtle
-          ? "hint-link -mr-1 inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold text-amber-700 transition hover:text-amber-800 hover:underline hover:underline-offset-4 dark:text-amber-300 dark:hover:text-amber-200 sm:py-1"
-          : "inline-flex items-center gap-2 rounded-xl border border-accent-300/70 bg-accent-300/15 px-3.5 py-2 text-sm font-semibold text-amber-700 transition hover:bg-accent-300/30 dark:text-amber-300",
+          ? "hint-link -mr-1 inline-flex items-center gap-1.5 rounded px-2 py-2 text-xs font-semibold text-amber-700 transition hover:text-amber-800 hover:underline hover:underline-offset-4 dark:text-amber-300 dark:hover:text-amber-200 sm:py-1"
+          : "inline-flex items-center gap-2 rounded border border-accent-300/70 bg-accent-300/15 px-3.5 py-2 text-sm font-semibold text-amber-700 transition hover:bg-accent-300/30 dark:text-amber-300",
         on: {
           click: function () {
             open = !open;
