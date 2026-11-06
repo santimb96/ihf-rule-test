@@ -8,9 +8,21 @@
   var R = global.IHFRender;
   var D = global.IHFData;
   var Hint = global.IHFHint;
+  var Scoring = global.IHFScoring;
   var el = R.el;
 
   var CIRCUMFERENCE = 2 * Math.PI * 54;
+
+  // Status pill copy per classification. A partial sweep is not a plain miss,
+  // and an unanswered question is not a wrong answer. The classification
+  // itself lives in IHFScoring.questionStatus so the stats history and this
+  // screen can never disagree.
+  var STATUS_PILL = {
+    correct: { label: "Acertada", icon: "check", tone: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
+    unanswered: { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200" },
+    wrong: { label: "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" },
+    partial: { label: "Parcial", icon: "alert", tone: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" },
+  };
 
   // Option row states in the review list. "missed" is a correct answer the user
   // never picked: amber with an alert so it never reads as a hit.
@@ -25,19 +37,9 @@
     var q = result.question;
     var hint = Hint.create(q, { subtle: true });
     var unanswered = result.selected.length === 0;
-    var wrongPick = result.selected.some(function (letter) {
-      return q.answer.indexOf(letter) === -1;
-    });
 
-    // Status pill. A partial sweep is not a plain miss, and an unanswered
-    // question is not a wrong answer.
-    var status = result.correct
-      ? { label: "Acertada", icon: "check", tone: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" }
-      : unanswered
-        ? { label: "Sin responder", icon: "dash", tone: "bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200" }
-        : wrongPick
-          ? { label: "Fallada", icon: "x", tone: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" }
-          : { label: "Parcial", icon: "alert", tone: "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200" };
+    // Status pill comes straight from the shared classification.
+    var status = STATUS_PILL[result.status] || STATUS_PILL[Scoring.STATUS.unanswered];
 
     var optionRows = q.options.map(function (opt) {
       var inKey = q.answer.includes(opt.letter);

@@ -68,6 +68,7 @@
             question: question,
             selected: picked.slice(),
             points: points,
+            status: Scoring.questionStatus(picked, question.answer),
             correct: points === question.answer.length,
           };
         });

@@ -10,6 +10,12 @@
   var PASS_RATIO = 0.75;
   var SUPPORTED_LENGTHS = [5, 10, 20, 30];
 
+  // One classification for a answered question, shared by the results screen,
+  // the stats history and any future view: an empty selection is unanswered,
+  // any wrong letter voids the question, a full sweep is correct and anything
+  // in between is a partial.
+  var STATUS = { correct: "correct", partial: "partial", wrong: "wrong", unanswered: "unanswered" };
+
   function percentage(score, total) {
     if (!total) return 0;
     return Math.round((score / total) * 10000) / 100;
@@ -37,13 +43,24 @@
     return points;
   }
 
+  function questionStatus(selected, answer) {
+    if (!selected || !selected.length) return STATUS.unanswered;
+    var i;
+    for (i = 0; i < selected.length; i++) {
+      if (answer.indexOf(selected[i]) === -1) return STATUS.wrong;
+    }
+    return questionPoints(selected, answer) === answer.length ? STATUS.correct : STATUS.partial;
+  }
+
   var api = {
     PASS_RATIO: PASS_RATIO,
     SUPPORTED_LENGTHS: SUPPORTED_LENGTHS,
+    STATUS: STATUS,
     percentage: percentage,
     passes: passes,
     requiredCorrect: requiredCorrect,
     questionPoints: questionPoints,
+    questionStatus: questionStatus,
   };
 
   global.IHFScoring = api;
