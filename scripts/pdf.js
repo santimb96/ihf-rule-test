@@ -238,6 +238,14 @@
       return doc.getTextWidth(sanitize(str));
     }
 
+    // Equal left/right padding inside every pill, charSpace included.
+    var PILL_PAD = 4.5;
+    function pillWidth(str, style, size, family, charSpace) {
+      var w = textWidth(str, style, size, family);
+      if (charSpace) w += charSpace * Math.max(0, String(str).length - 1);
+      return w + PILL_PAD * 2;
+    }
+
     /** Draws pre-wrapped lines from a block top and returns the block height. */
     function linesBlock(lines, x, yTop, size, style, color, step, family) {
       doc.setFont(family || "helvetica", style);
@@ -249,47 +257,44 @@
       return lines.length * step;
     }
 
-    // --- handball court line art (same motif as the web hero) ------------
-    function courtArt(x, yTop, w, h) {
-      var sx = w / 400;
-      var sy = h / 200;
-      function px(u) {
-        return x + u * sx;
+    // --- handball half-court line art (same motif as the web hero) -------
+    function courtHalf(x, yTop, size) {
+      var u = size / 200; // the half court is a 200x200 unit square
+      function px(v) {
+        return x + v * u;
       }
       function py(v) {
-        return yTop + v * sy;
+        return yTop + v * u;
       }
       function strokeArc(cx, cy, r, a0, a1, steps) {
-        var prevX = px(cx) + r * sx * Math.cos(a0);
-        var prevY = py(cy) + r * sy * Math.sin(a0);
+        var prevX = px(cx) + r * u * Math.cos(a0);
+        var prevY = py(cy) + r * u * Math.sin(a0);
         for (var i = 1; i <= steps; i++) {
           var a = a0 + ((a1 - a0) * i) / steps;
-          var nx = px(cx) + r * sx * Math.cos(a);
-          var ny = py(cy) + r * sy * Math.sin(a);
+          var nx = px(cx) + r * u * Math.cos(a);
+          var ny = py(cy) + r * u * Math.sin(a);
           doc.line(prevX, prevY, nx, ny);
           prevX = nx;
           prevY = ny;
         }
       }
 
-      doc.setLineWidth(0.5);
+      doc.setLineWidth(0.4);
       setDraw(C.white);
-      doc.setGState(new doc.GState({ opacity: 0.22 }));
+      doc.setGState(new doc.GState({ opacity: 0.8 }));
 
-      doc.rect(px(1.5), py(1.5), (397 * w) / 400, (197 * h) / 200, "S");
-      doc.line(px(200), py(1.5), px(200), py(198.5));
-      // Left goal area: goal-line -> arc -> 3 m front line -> arc -> goal-line.
-      strokeArc(0, 85, 60, -Math.PI / 2, 0, 14);
+      // Half court: end line, both sidelines and the centre line close it.
+      doc.line(px(1.5), py(1.5), px(198.5), py(1.5));
+      doc.line(px(1.5), py(198.5), px(198.5), py(198.5));
+      doc.line(px(1.5), py(1.5), px(1.5), py(198.5));
+      doc.line(px(198.5), py(1.5), px(198.5), py(198.5));
+      // Goal area: goal line -> arc -> 3 m front line -> arc -> goal line.
+      strokeArc(0, 85, 60, -Math.PI / 2, 0, 16);
       doc.line(px(60), py(85), px(60), py(115));
-      strokeArc(0, 115, 60, 0, Math.PI / 2, 14);
-      // Right goal area.
-      strokeArc(400, 85, 60, -Math.PI / 2, -Math.PI, 14);
-      doc.line(px(340), py(85), px(340), py(115));
-      strokeArc(400, 115, 60, Math.PI, Math.PI / 2, 14);
-      // Goals.
-      doc.setLineWidth(1.4);
+      strokeArc(0, 115, 60, 0, Math.PI / 2, 16);
+      // Goal posts.
+      doc.setLineWidth(1.2);
       doc.line(px(1.5), py(85), px(1.5), py(115));
-      doc.line(px(398.5), py(85), px(398.5), py(115));
 
       doc.setGState(new doc.GState({ opacity: 1 }));
     }
@@ -322,7 +327,7 @@
       doc.rect(0, band, PAGE.w, BAND_ACCENT, "F");
 
       if (first) {
-        courtArt(148, 4, 56, 28);
+        courtHalf(158, 3, 32);
 
         if (logoData) {
           try {
@@ -412,8 +417,9 @@
               })
               .join(", ");
 
-      var innerX = X0 + 44;
+      var innerX = X0 + 8 + 27 + 8; // card pad + ring diameter + gap
       var innerW = X1 - 8 - innerX;
+      var pad = 8;
       var tone = report.passed ? STATUS.accepted : STATUS.failed;
       var headline = report.passed ? "¡Enhorabuena, has aprobado!" : "¡Esta vez no ha sido posible!";
       var sentence = report.passed
@@ -437,9 +443,10 @@
       var dLines = wrap(details, "normal", TYPE.small.size, innerW);
       var tLines = wrap("Temas: " + topicsText, "normal", TYPE.caption.size, innerW);
       var headlineH = lh(TYPE.h1.size, 1.2);
+      var pillH = 8;
       var contentH =
-        8 + 3.5 + headlineH + 2 + sLines.length * stmtStep + 2 + dLines.length * smallStep + 1.5 + tLines.length * capStep;
-      var cardH = Math.max(40, contentH + 13);
+        pillH + 3.2 + headlineH + 3.2 + sLines.length * stmtStep + 2 + dLines.length * smallStep + 1.5 + tLines.length * capStep;
+      var cardH = Math.max(27 + pad * 2, contentH + pad * 2);
 
       setFill(C.white);
       setDraw(C.line);
@@ -447,7 +454,7 @@
       rrect(X0, y, CONTENT_W, cardH, RADIUS.panel, "FD");
 
       // Ring column.
-      var cx = X0 + 24;
+      var cx = X0 + pad + 13.5;
       var cy = y + cardH / 2;
       ring(cx, cy, 13.5, report.percentage, tone.accent);
       display(report.percentage + "%", cx, cy - 1.4, {
@@ -464,10 +471,9 @@
       });
 
       // Copy column.
-      var top = y + 7;
+      var top = y + pad;
       var pillText = report.passed ? "APROBADO" : "NO APROBADO";
-      var pillH = 8;
-      var pw = textWidth(pillText, "bold", TYPE.small.size) + 9;
+      var pw = pillWidth(pillText, "bold", TYPE.small.size, DISPLAY, 0.4);
       setFill(tone.accent);
       rrect(innerX, top, pw, pillH, pillH / 2, "F");
       txt(pillText, innerX + pw / 2, top + pillH / 2, {
@@ -503,7 +509,7 @@
       items.forEach(function (it) {
         setFill(it.c);
         rrect(x, top + 0.6, 2.6, 2.6, 0.8, "F");
-        txt(it.label, x + 4.2, top + 2.8, { size: TYPE.caption.size, color: C.slate });
+        txt(it.label, x + 4.2, top + 1.9, { size: TYPE.caption.size, color: C.slate, baseline: "middle" });
         x += 4.2 + textWidth(it.label, "normal", TYPE.caption.size) + 8;
       });
 
@@ -520,11 +526,11 @@
     function sectionTitle(label, count, tone) {
       ensureSpace(50);
       var top = y;
-      display(label, X0, top + 10, { size: TYPE.h1.size, color: tone.accent });
+      display(label, X0, top + 7, { size: TYPE.h1.size, color: tone.accent, baseline: "middle" });
       var labelW = textWidth(label, "bold", TYPE.h1.size, DISPLAY);
 
       var countText = String(count);
-      var pillW = textWidth(countText, "bold", TYPE.small.size) + 8;
+      var pillW = pillWidth(countText, "bold", TYPE.small.size, DISPLAY, 0);
       setFill(tone.tint);
       rrect(X0 + labelW + 6, top + 3, pillW, 8, 4, "F");
       txt(countText, X0 + labelW + 6 + pillW / 2, top + 7, {
@@ -547,12 +553,12 @@
     }
 
     // --- question blocks -------------------------------------------------
-    var BLOCK = { padT: 5, padB: 6, rule: 3 };
-    var IX = X0 + 6; // 21, inner text left
-    var IR = X1 - 8; // 187, inner text right
-    var IW = IR - IX; // 166
-    var TINT_X = IX - 3; // 18, option tint band
-    var TINT_W = IR + 3 - TINT_X; // 172
+    var BLOCK = { padT: 6, padB: 6, rule: 1 };
+    var IX = X0 + 7; // inner text left
+    var IR = X1 - 6; // inner text right
+    var IW = IR - IX;
+    var TINT_X = IX - 3; // option tint band
+    var TINT_W = IR + 3 - TINT_X;
 
     function layoutQuestion(result) {
       var q = result.question;
@@ -594,7 +600,7 @@
         "Directrices: " + (chipText || q.rules),
         TYPE.quote.style,
         TYPE.quote.size,
-        158,
+        TINT_W - 10,
       );
       var hintH = hintLines.length * hintStep + 8;
 
@@ -637,11 +643,12 @@
 
     function drawHeadStatement(result, tone, pillText, stmtLines, stmtStep, cy) {
       var q = result.question;
+      var rowCenter = cy + 3.25; // one shared centre line for the whole row
 
-      var pw = textWidth(pillText, "bold", TYPE.caption.size, DISPLAY) + 8;
+      var pw = pillWidth(pillText, "bold", TYPE.caption.size, DISPLAY, 0.3);
       setFill(tone.accent);
       rrect(IX, cy, pw, 6.5, 3.25, "F");
-      txt(pillText, IX + pw / 2, cy + 3.4, {
+      txt(pillText, IX + pw / 2, rowCenter, {
         family: DISPLAY,
         style: "bold",
         size: TYPE.caption.size,
@@ -653,20 +660,21 @@
 
       var idText = "Pregunta " + q.id;
       var idX = IX + pw + 6;
-      display(idText, idX, cy + 4.7, { size: TYPE.body.size, color: C.ink });
+      display(idText, idX, rowCenter, { size: TYPE.body.size, color: C.ink, baseline: "middle" });
 
       var answerText = "Tu respuesta: " + (result.selected.length ? result.selected.join(", ") : "-");
       var answerW = textWidth(answerText, "bold", TYPE.small.size);
       var topic = D.topicLabel(q.topic);
       var topicX = idX + textWidth(idText, "bold", TYPE.body.size, DISPLAY) + 7;
       if (topicX + textWidth(topic, "normal", TYPE.small.size) + 8 + answerW <= IR) {
-        txt(topic, topicX, cy + 4.7, { size: TYPE.small.size, color: C.muted });
+        txt(topic, topicX, rowCenter, { size: TYPE.small.size, color: C.muted, baseline: "middle" });
       }
-      txt(answerText, IR, cy + 4.7, {
+      txt(answerText, IR, rowCenter, {
         style: "bold",
         size: TYPE.small.size,
         color: tone.dark,
         align: "right",
+        baseline: "middle",
       });
 
       setDraw(C.line);
@@ -723,14 +731,15 @@
     }
 
     function drawHint(lines, step, cy) {
-      var boxH = lines.length * step + 8;
+      var boxH = lines.length * step + 7.2;
       setFill(C.amberWash);
       setDraw(C.amberLine);
       doc.setLineWidth(0.3);
       rrect(TINT_X, cy, TINT_W, boxH, RADIUS.control, "FD");
       setFill(C.amber);
       doc.rect(TINT_X, cy, 1.2, boxH, "F");
-      linesBlock(lines, TINT_X + 5.5, cy + 4, TYPE.quote.size, TYPE.quote.style, C.slate, step);
+      // Vertically centred inside the box, equal padding above and below.
+      linesBlock(lines, TINT_X + 5, cy + (boxH - lines.length * step) / 2, TYPE.quote.size, TYPE.quote.style, C.slate, step);
     }
 
     /**
@@ -775,7 +784,8 @@
         doc.setLineWidth(0.35);
         rrect(X0, seg.top, CONTENT_W, seg.bottom - seg.top, RADIUS.panel, "S");
         setFill(tone.accent);
-        doc.rect(X1 - BLOCK.rule, seg.top, BLOCK.rule, seg.bottom - seg.top, "F");
+        // Thin status rule, inset so the card's rounded corners stay clean.
+        doc.rect(X1 - 1.8, seg.top + 1.6, BLOCK.rule, seg.bottom - seg.top - 3.2, "F");
 
         var cy = seg.top + BLOCK.padT;
         for (var i = seg.from; i < seg.to; i++) {
