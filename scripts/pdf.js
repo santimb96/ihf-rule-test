@@ -16,7 +16,7 @@
   var CONTENT_W = X1 - X0; // 180
 
   var FOOT_Y = 282; // footer rule
-  var BOTTOM = 275; // content must stop above the footer
+  var BOTTOM = 276; // content must stop above the footer
   var BAND1 = 38; // cover header band
   var BANDN = 16; // running header band
   var BAND_ACCENT = 1.4; // amber rule under every band
@@ -24,7 +24,7 @@
   var STARTN = BANDN + BAND_ACCENT + 6; // 23.4
 
   var SP = { s: 3.5, m: 5, l: 8 }; // vertical rhythm between blocks
-  var BLOCK_GAP = 6; // gap between two question blocks
+  var BLOCK_GAP = 5; // gap between two question blocks
   var RADIUS = { panel: 1.6, control: 1.0 }; // 6px / 4px at web scale
 
   var MM_PT = 25.4 / 72;
@@ -239,7 +239,7 @@
     }
 
     // Equal left/right padding inside every pill, charSpace included.
-    var PILL_PAD = 4.5;
+    var PILL_PAD = 5.5;
     function pillWidth(str, style, size, family, charSpace) {
       var w = textWidth(str, style, size, family);
       if (charSpace) w += charSpace * Math.max(0, String(str).length - 1);
@@ -257,9 +257,9 @@
       return lines.length * step;
     }
 
-    // --- handball half-court line art (same motif as the web hero) -------
-    function courtHalf(x, yTop, size) {
-      var u = size / 200; // the half court is a 200x200 unit square
+    // --- handball court line art, bleeding off the page like the web hero --
+    function courtFull(x, yTop, w) {
+      var u = w / 400; // 400 x 200 court units
       function px(v) {
         return x + v * u;
       }
@@ -279,24 +279,27 @@
         }
       }
 
-      doc.setLineWidth(0.4);
+      doc.setLineWidth(0.45);
       setDraw(C.white);
       doc.setGState(new doc.GState({ opacity: 0.8 }));
 
-      // Half court: end line, both sidelines and the centre line close it.
-      doc.line(px(1.5), py(1.5), px(198.5), py(1.5));
-      doc.line(px(1.5), py(198.5), px(198.5), py(198.5));
-      doc.line(px(1.5), py(1.5), px(1.5), py(198.5));
-      doc.line(px(198.5), py(1.5), px(198.5), py(198.5));
-      // Goal area: goal line -> arc -> 3 m front line -> arc -> goal line.
+      doc.rect(px(1.5), py(1.5), 397 * u, 197 * u, "S");
+      doc.line(px(200), py(1.5), px(200), py(198.5));
+      // Left goal area: goal line -> arc -> 3 m front line -> arc -> goal line.
       strokeArc(0, 85, 60, -Math.PI / 2, 0, 16);
       doc.line(px(60), py(85), px(60), py(115));
       strokeArc(0, 115, 60, 0, Math.PI / 2, 16);
-      // Goal posts.
-      doc.setLineWidth(1.2);
+      // Right goal area.
+      strokeArc(400, 85, 60, -Math.PI / 2, -Math.PI, 16);
+      doc.line(px(340), py(85), px(340), py(115));
+      strokeArc(400, 115, 60, Math.PI, Math.PI / 2, 16);
+      // Goals.
+      doc.setLineWidth(1.3);
       doc.line(px(1.5), py(85), px(1.5), py(115));
+      doc.line(px(398.5), py(85), px(398.5), py(115));
 
       doc.setGState(new doc.GState({ opacity: 1 }));
+      return 200 * u;
     }
 
     // --- header bands ----------------------------------------------------
@@ -327,7 +330,8 @@
       doc.rect(0, band, PAGE.w, BAND_ACCENT, "F");
 
       if (first) {
-        courtHalf(158, 3, 32);
+        // Full court, larger than the band, cropped by the page edge.
+        courtFull(126, -7, 104);
 
         if (logoData) {
           try {
@@ -531,13 +535,13 @@
 
       var countText = String(count);
       var pillW = pillWidth(countText, "bold", TYPE.small.size, DISPLAY, 0);
-      setFill(tone.tint);
+      setFill(tone.accent);
       rrect(X0 + labelW + 6, top + 3, pillW, 8, 4, "F");
       txt(countText, X0 + labelW + 6 + pillW / 2, top + 7, {
         family: DISPLAY,
         style: "bold",
         size: TYPE.small.size,
-        color: tone.dark,
+        color: C.white,
         align: "center",
         baseline: "middle",
       });
@@ -553,7 +557,7 @@
     }
 
     // --- question blocks -------------------------------------------------
-    var BLOCK = { padT: 6, padB: 6, rule: 1 };
+    var BLOCK = { padT: 5, padB: 5, rule: 1 };
     var IX = X0 + 7; // inner text left
     var IR = X1 - 6; // inner text right
     var IW = IR - IX;
@@ -574,7 +578,6 @@
 
       var stmtStep = lh(TYPE.body.size, 1.4);
       var stmtLines = wrap(q.text, "bold", TYPE.body.size, IW);
-      var stmtH = stmtLines.length * stmtStep + SP.s;
 
       var optRows = q.options.map(function (o) {
         // Same four option states as the review screen: hit (picked), missed
@@ -591,7 +594,7 @@
           style: style,
           lines: lines,
           step: step,
-          h: Math.max(8.5, lines.length * step + 4),
+          h: Math.max(8, lines.length * step + 3),
         };
       });
 
@@ -602,17 +605,27 @@
         TYPE.quote.size,
         TINT_W - 10,
       );
-      var hintH = hintLines.length * hintStep + 8;
+      var hintH = hintLines.length * hintStep + 6;
 
-      // Header row and statement are one element: they can never split apart.
+      // The header row stays whole; the statement flows line by line so a
+      // block can start near the bottom of a page without leaving a gap.
       var elements = [
         {
-          h: 12 + stmtH,
+          h: 12,
           draw: function (cy) {
-            drawHeadStatement(result, tone, pillText, stmtLines, stmtStep, cy);
+            drawHeadRow(result, tone, pillText, cy);
           },
         },
       ];
+      stmtLines.forEach(function (line) {
+        elements.push({
+          h: stmtStep,
+          draw: function (cy) {
+            drawStatementLine(line, cy);
+          },
+        });
+      });
+      elements.push({ h: SP.s, draw: function () {} });
       optRows.forEach(function (row) {
         elements.push({
           h: row.h,
@@ -641,7 +654,7 @@
       return { tone: tone, elements: elements, total: total };
     }
 
-    function drawHeadStatement(result, tone, pillText, stmtLines, stmtStep, cy) {
+    function drawHeadRow(result, tone, pillText, cy) {
       var q = result.question;
       var rowCenter = cy + 3.25; // one shared centre line for the whole row
 
@@ -680,8 +693,14 @@
       setDraw(C.line);
       doc.setLineWidth(0.3);
       doc.line(IX, cy + 10.5, IR, cy + 10.5);
+    }
 
-      linesBlock(stmtLines, IX, cy + 12, TYPE.body.size, "bold", C.ink, stmtStep);
+    /** One statement line, positioned like a single line of linesBlock. */
+    function drawStatementLine(line, cy) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(TYPE.body.size);
+      setColor(C.ink);
+      doc.text(line, IX, cy + TYPE.body.size * MM_PT * 0.76);
     }
 
     var OPTION_TINT = {
@@ -731,7 +750,7 @@
     }
 
     function drawHint(lines, step, cy) {
-      var boxH = lines.length * step + 7.2;
+      var boxH = lines.length * step + 6;
       setFill(C.amberWash);
       setDraw(C.amberLine);
       doc.setLineWidth(0.3);
@@ -743,36 +762,64 @@
     }
 
     /**
-     * Measures a block, moves it as a whole when it fits on a fresh page and
-     * only then splits it, drawing the frame once per page segment.
+     * Questions flow to the bottom of the page and continue on the next one
+     * (with a "continúa" strip) instead of jumping whole and leaving a large
+     * blank area. The header + statement are the only unsplittable unit.
      */
     function drawBlock(result) {
       var layout = layoutQuestion(result);
       var tone = layout.tone;
-      var blockH = BLOCK.padT + layout.total + BLOCK.padB;
-
-      if (blockH <= BOTTOM - STARTN && y + blockH > BOTTOM) newPage();
-      if (y + BLOCK.padT + BLOCK.padB > BOTTOM) newPage();
+      var els = layout.elements;
+      var q = result.question;
 
       var segs = [];
       var segTop = y;
       var segPage = pageNo;
       var from = 0;
-      var cursor = y + BLOCK.padT;
+      var cursor = segTop + BLOCK.padT;
+      var i = 0;
+      var freshPage = false;
 
-      for (var i = 0; i < layout.elements.length; i++) {
-        var el = layout.elements[i];
-        if (cursor + el.h + BLOCK.padB > BOTTOM) {
-          segs.push({ top: segTop, bottom: cursor + BLOCK.padB, page: segPage, from: from, to: i });
+      while (i < els.length) {
+        if (cursor + els[i].h + BLOCK.padB <= BOTTOM) {
+          cursor += els[i].h;
+          i += 1;
+          freshPage = false;
+          continue;
+        }
+        if (i === from && !freshPage) {
+          // Nothing drawn in this segment yet: retry on a clean page.
           newPage();
           segTop = y;
           segPage = pageNo;
           cursor = y + BLOCK.padT;
-          from = i;
+          freshPage = true;
+          continue;
         }
-        cursor += el.h;
+        if (i === from) {
+          // An element taller than the page body: draw it and accept overflow.
+          cursor += els[i].h;
+          i += 1;
+          continue;
+        }
+        // Never strand a single trailing element (the hint box) alone on the
+        // next page: move the previous element with it when possible.
+        var end = i;
+        var segCursor = cursor;
+        if (els.length - i === 1 && i - 1 > from) {
+          end = i - 1;
+          segCursor = cursor - els[end].h;
+        }
+        segs.push({ top: segTop, bottom: segCursor + BLOCK.padB, page: segPage, from: from, to: end, cont: from > 0 });
+        newPage();
+        segTop = y;
+        segPage = pageNo;
+        from = end;
+        i = end;
+        cursor = y + BLOCK.padT + 7;
+        freshPage = true;
       }
-      segs.push({ top: segTop, bottom: cursor + BLOCK.padB, page: segPage, from: from, to: layout.elements.length });
+      segs.push({ top: segTop, bottom: cursor + BLOCK.padB, page: segPage, from: from, to: els.length, cont: from > 0 });
       y = cursor + BLOCK.padB;
 
       var back = pageNo;
@@ -788,9 +835,20 @@
         doc.rect(X1 - 1.8, seg.top + 1.6, BLOCK.rule, seg.bottom - seg.top - 3.2, "F");
 
         var cy = seg.top + BLOCK.padT;
-        for (var i = seg.from; i < seg.to; i++) {
-          layout.elements[i].draw(cy);
-          cy += layout.elements[i].h;
+        if (seg.cont) {
+          txt("Pregunta " + q.id + " · continúa", IX, seg.top + BLOCK.padT + 3.2, {
+            size: TYPE.caption.size,
+            color: tone.dark,
+            baseline: "middle",
+          });
+          setDraw(tone.line);
+          doc.setLineWidth(0.3);
+          doc.line(IX, seg.top + BLOCK.padT + 7, IR, seg.top + BLOCK.padT + 7);
+          cy = seg.top + BLOCK.padT + 7;
+        }
+        for (var k = seg.from; k < seg.to; k++) {
+          els[k].draw(cy);
+          cy += els[k].h;
         }
       });
       doc.setPage(back);
