@@ -86,10 +86,12 @@ timestamp, percentage, score, pass state, length, elapsed time and one entry per
 question with its classification (acertada / parcial / fallada / sin responder)
 and the points earned.
 
-- The setup screen shows **Mis estadísticas** only when this browser holds at
-  least one attempt. The dialog compares the recent half of the history against
-  the previous half, shows the answer mix, the most practiced rule (primary rule
-  from `question.rules`) and the weakest one once it has at least 3 questions.
+- The header shows **Estadísticas** only when this browser holds at least one
+  attempt: the button is global to the three screens and stays out of the
+  "Comenzar test" decision area. The dialog compares the recent half of the
+  history against the previous half, shows the answer mix, the most practiced
+  rule (primary rule from `question.rules`) and the weakest one once it has at
+  least 3 questions.
 - "Repetir los fallos" attempts are tagged `retry`: they count for practice and
   rule accuracy, but are excluded from the trend so re-running missed questions
   cannot make progress look worse.

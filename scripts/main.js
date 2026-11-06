@@ -16,7 +16,68 @@
     return document.getElementById(id);
   }
 
+  function renderHeaderStats() {
+    var host = document.getElementById("header-stats");
+    if (!host) return;
+    [
+      D.meta.questionCount + " preguntas",
+      D.topics().length + " temas",
+      "Aprobado ≥ 75%",
+    ].forEach(function (text) {
+      R.append(
+        host,
+        R.el("span", {
+          class: "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300",
+          text: text,
+        }),
+      );
+    });
+  }
+
+  // The progress entry point lives in the header: it is global to the three
+  // screens and does not compete with the "Comenzar test" decision. It only
+  // exists once this browser holds at least one attempt.
+  function renderHeaderStatsButton() {
+    var host = document.getElementById("header-actions");
+    if (!host) return;
+    var existing = document.getElementById("stats-toggle");
+    var hasHistory = !!(Stats && Stats.all().length);
+    if (!hasHistory) {
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      return;
+    }
+    if (existing) return;
+
+    var button = R.el(
+      "button",
+      {
+        type: "button",
+        id: "stats-toggle",
+        "data-action": "stats",
+        "aria-label": "Mis estadísticas",
+        class:
+          "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white",
+        on: {
+          click: function () {
+            if (!Screens.stats) return;
+            Screens.stats.open({
+              onCleared: function () {
+                if (button.parentNode) button.parentNode.removeChild(button);
+              },
+            });
+          },
+        },
+        kids: [
+          R.icon("chart", "h-5 w-5 shrink-0"),
+          R.el("span", { class: "hidden sm:inline", text: "Estadísticas" }),
+        ],
+      },
+    );
+    host.appendChild(button);
+  }
+
   function showSetup() {
+    renderHeaderStatsButton();
     R.showScreen("screen-setup");
     Screens.setup.mount(screenNode("screen-setup"), {
       onStart: function (config) {
@@ -56,6 +117,7 @@
   }
 
   function showResults() {
+    renderHeaderStatsButton();
     R.showScreen("screen-results");
     Screens.results.mount(screenNode("screen-results"), {
       report: state.report,
