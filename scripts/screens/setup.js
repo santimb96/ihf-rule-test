@@ -239,6 +239,17 @@
             text: D.meta.questionCount +
               " preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.",
           }),
+          // The pass rule is the one datum a first-time visitor needs before
+          // starting, and it is real (PASS_RATIO in scoring.js), unlike the
+          // removed "≈ minutes" strip.
+          el(
+            "p",
+            {
+              class: "mt-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 sm:text-sm",
+            },
+            R.icon("check", "h-3.5 w-3.5 shrink-0 text-accent-300"),
+            "Se aprueba con ≥75% de respuestas correctas",
+          ),
           // No "200 preguntas · 19 temas" pill row: the sentence above already
           // states those figures with their source. A second strip of bare
           // numbers is decoration, not information.
