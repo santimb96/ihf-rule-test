@@ -356,7 +356,7 @@
           color: C.amber,
           charSpace: 1.2,
         });
-        display("Reglas de juego IHF", X0 + 21, 23, {
+        display("Catálogo IHF - Test reglas de juego", X0 + 21, 23, {
           size: TYPE.title.size,
           color: C.white,
           charSpace: 0.2,
@@ -366,7 +366,7 @@
           color: C.brand200,
         });
       } else {
-        display("Reglas de juego IHF", X0, 11, { size: TYPE.h2.size, color: C.white });
+        display("Catálogo IHF - Test reglas de juego", X0, 11, { size: TYPE.h2.size, color: C.white });
         txt("Test no oficial · Informe de resultados", X1, 11, {
           size: TYPE.caption.size,
           color: C.brand200,
@@ -865,7 +865,7 @@
         doc.setLineWidth(0.3);
         doc.line(X0 + 16, FOOT_Y, X1, FOOT_Y);
         txt(
-          "Reglas de juego IHF · Catálogo de preguntas IHF (ES) + Resolución de preguntas (EN), jul 2025",
+          "Catálogo IHF - Test reglas de juego · Catálogo de preguntas IHF (ES) + Resolución de preguntas (EN), jul 2025",
           X0,
           FOOT_Y + 4.4,
           { size: TYPE.caption.size, color: C.muted },
