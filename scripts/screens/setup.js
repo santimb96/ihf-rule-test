@@ -410,7 +410,7 @@
       ),
       el("p", {
         class: "mt-3 max-w-lg text-sm leading-relaxed text-slate-500",
-        text: "Esta web es una herramienta de estudio que no está vinculada con ningún organismo oficial. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto y compartirlo si te ha sido de utilidad!",
+        text: "Esta web es una herramienta de estudio. No es oficial ni está vinculada con la IHF. Los datos expuestos son de dominio público. ¡Puedes consultar el proyecto o abrir una issue para mejorarlo!",
       }),
       el(
         "div",
