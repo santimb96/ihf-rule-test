@@ -418,7 +418,7 @@
         el(
           "a",
           {
-            href: "https://github.com/santimb96/non-official-ihf-rule-test",
+            href: "https://github.com/santimb96/ihf-rule-test",
             target: "_blank",
             rel: "noopener",
             class: "inline-flex items-center gap-1.5 text-brand-700 underline-offset-4 transition hover:underline dark:text-brand-300",
@@ -426,7 +426,7 @@
           },
         ),
         el("a", {
-          href: "https://github.com/santimb96/non-official-ihf-rule-test/issues",
+          href: "https://github.com/santimb96/ihf-rule-test/issues",
           target: "_blank",
           rel: "noopener",
           class: "inline-flex items-center gap-1.5 text-slate-600 underline-offset-4 transition hover:text-brand-700 hover:underline dark:text-slate-300 dark:hover:text-brand-300",
