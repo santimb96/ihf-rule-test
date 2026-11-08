@@ -5,7 +5,7 @@ pick topics, pick a length (5/10/20/30), answer, check the cited guidelines
 through per-question hints, see pass/fail at **>= 75%**, track your progress in
 the browser and export a styled PDF report.
 
-**Use it at <https://non-official-ihf-rule-test.netlify.app/>.** Nothing to
+**Use it at <https://catalogoihf.netlify.app/>.** Nothing to
 install: it is a static site that runs entirely in the browser, and every
 attempt stays on the device.
 

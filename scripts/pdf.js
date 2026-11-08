@@ -838,7 +838,7 @@ export const generate = async (report, config) => {
         color: C.slate,
         align: 'right',
       })
-      txt('non-official-ihf-rule-test.netlify.app', X1, FOOT_Y + 8.4, {
+      txt('catalogoihf.netlify.app', X1, FOOT_Y + 8.4, {
         size: TYPE.caption.size,
         color: C.muted,
         align: 'right',
