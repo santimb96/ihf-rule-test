@@ -60,9 +60,14 @@ const catalogueMeta = () => ({
   resolveId (id) {
     return id === VIRTUAL_ID ? RESOLVED_ID : null
   },
+  // Watched from buildStart, not load: in Vite 8 a load-context addWatchFile
+  // registers the path as an added import, and "data/questions.js" is not a
+  // resolvable specifier, so the next re-transform of this module fails.
+  buildStart () {
+    this.addWatchFile('data/questions.js')
+  },
   load (id) {
     if (id !== RESOLVED_ID) return null
-    this.addWatchFile('data/questions.js')
     const sandbox = {}
     new Function('globalThis', fs.readFileSync('data/questions.js', 'utf8'))(sandbox)
     const data = sandbox.IHF_DATA
