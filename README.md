@@ -1,46 +1,24 @@
 # Catálogo IHF - Test reglas de juego
 
-Local study platform built on the official IHF question catalogues in `documents/`:
-pick topics, pick a length (5/10/20/30), answer, check the cited guidelines through
-per-question hints, see pass/fail at **>= 75%**, track your progress in the browser
-and export a styled PDF report.
+Web study app built on the official IHF question catalogues in `documents/`:
+pick topics, pick a length (5/10/20/30), answer, check the cited guidelines
+through per-question hints, see pass/fail at **>= 75%**, track your progress in
+the browser and export a styled PDF report.
 
-## Run
+**Use it at <https://non-official-ihf-rule-test.netlify.app/>.** Nothing to
+install: it is a static site that runs entirely in the browser, and every
+attempt stays on the device.
 
-Requires Node 22+ and pnpm 10 (`packageManager` pins `pnpm@10.34.9`):
+## How to use
 
-```bash
-pnpm install
-pnpm dev        # dev server at http://localhost:5173
-pnpm build      # production build into dist/
-pnpm preview    # serve dist/ locally
-```
-
-The build is a static site: deploy `dist/` to Netlify or Vercel (both configs
-are included, `netlify.toml` and `vercel.json`). Nothing loads from a CDN at
-runtime — styles, fonts and jsPDF all ship from the project.
-
-## Dependencies
-
-Managed with pnpm; the browser never talks to a CDN:
-
-- `tailwindcss` 3.4.16 (build-time) — utilities compiled and purged by Vite +
-  PostCSS from `styles/main.css`; the theme lives in `tailwind.config.js`
-  (moved verbatim from the former inline config in `index.html`). Tailwind v4 is
-  deliberately not adopted: it changes default border/ring semantics and would
-  be a separate visual migration.
-- `@fontsource-variable/inter`, `@fontsource-variable/archivo` — self-hosted
-  variable fonts (all subsets), emitted as cacheable `.woff2` assets. Replaces
-  the Google Fonts stylesheet. Archivo is imported from its `wght` subset: the
-  design never uses the width axis, and `standard` (wdth+wght) is 90 KB for
-  latin where `wght` is 35 KB.
-- `jspdf` 2.5.2 — lazy-loaded with a dynamic `import()` on the first PDF
-  download, so its ~342 kB stays out of the initial payload.
-
-```bash
-pnpm add jspdf@2.5.2                 # runtime dependency
-pnpm add -D tailwindcss@3.4.16 vite  # build tooling
-```
+1. Pick the topics and the test length (5, 10, 20 or 30 questions).
+2. Answer each question; the hint button shows the guidelines the catalogue
+   cites for that answer.
+3. Finish to see the score, the pass state (>= 75% of the possible answers) and
+   a per-question review.
+4. Download the report as a styled PDF, retry the missed questions, or start a
+   new test.
+5. Open **Estadísticas** in the header to review the history kept on this device.
 
 ## Structure
 
@@ -68,23 +46,16 @@ scripts/
   main.js           lifecycle wiring: imports screens on demand, jsPDF fetched on demand
 data/questions.js   generated dataset (do not edit by hand); fetched on the first
                     "Comenzar test", never in the entry bundle
-data/rules.js       extracted rules text: read by tests/tools only, not shipped
+data/rules.js       extracted rules text: read by the tests, not shipped today
 tools/extract_catalog.py   regenerates the dataset from the PDFs
 tests/              node:test suite
-odd/tasks/          feature document (specs, tasks, log)
 ```
 
 ## Tests
 
-```bash
-pnpm test          # node --test tests/*.test.mjs
-pnpm lint          # eslint flat config: no semicolons, single quotes, 2-space
-```
-
-Covers dataset integrity, the 75%-of-answers pass rule, per-answer grading, the
-shared question classification, the quiz engine and the local statistics store.
-Note: `tests/rules.test.mjs` currently has 5 pre-existing failures (dataset text
-extraction, pending task T8); they reproduce on a clean checkout too.
+The suite covers dataset integrity, the 75%-of-answers pass rule, per-answer
+grading, the shared question classification, the quiz engine, the local
+statistics store and the resolution of hint citations to the rules text.
 
 ## Local statistics
 
@@ -108,16 +79,21 @@ and the points earned.
 - Corrupt, foreign-version or blocked storage (private mode, quota) degrades to
   an empty history instead of breaking the app.
 
-## Regenerate the dataset
+## Stack
 
-```bash
-pip3 install pdfplumber
-python3 tools/extract_catalog.py
-```
+Everything ships with the site; nothing loads from a CDN at runtime.
 
-The Spanish catalogue provides questions, options and topics; the English answer
-key provides the correct options and the cited guidelines; both are joined by
-question id and validated (ids, option letters, answer subsets, guidelines).
+- **Tailwind CSS 3.4.16** (build-time) — utilities compiled and purged by Vite +
+  PostCSS from `styles/main.css`; the theme lives in `tailwind.config.js`,
+  moved verbatim from the former inline config in `index.html`. Tailwind v4 is
+  deliberately not adopted: it changes default border/ring semantics and would
+  be a separate visual migration.
+- **Inter and Archivo variable fonts** — self-hosted `.woff2` subsets, emitted
+  as cacheable assets. Archivo is imported from its `wght` subset: the design
+  never uses the width axis, and `standard` (wdth+wght) is 90 KB for latin where
+  `wght` is 35 KB.
+- **jsPDF** — loaded with a dynamic `import()` on the first PDF download, so its
+  ~342 kB stays out of the initial payload.
 
 ## Rules
 
