@@ -53,20 +53,19 @@ styles/
   main.css          build entry: fontsource imports + @tailwind layers
   styles.css        custom CSS layer loaded after main.css (overrides utilities)
 scripts/
-  app.js            bundler entry: imports the first-paint IIFEs in dependency order
-  lazy/             chunks fetched on demand (quiz, results, stats, PDF viewer)
-  catalogue-meta.js publishes meta/topics/counts from virtual:ihf-catalogue-meta
+  app.js            bundler entry: catalogue metadata + main.js
+  catalogue-meta.js configures data.js with meta/topics/counts from virtual:ihf-catalogue-meta
   scoring.js        75% pass rule over the test's possible answers + question status
   quiz.js           attempt builder (shuffle, answers, report)
   stats.js          per-browser attempt history + aggregations (no DOM)
-  data.js           metadata access + IHFData.load() for the questions + hint parsing
+  data.js           metadata access + load() for the questions + hint parsing
   hint.js           shared collapsible hint component
   dialog.js         shared modal shell: focus trap, Escape, scroll lock
   pdf-modal.js      in-app PDF viewer for rule and document links
   render.js         DOM helpers, screen switching, icons, toast
-  screens/          setup / quiz / results / stats screens
+  screens/          setup / quiz / results / stats screens (each its own chunk)
   pdf.js            jsPDF report (header, summary, accepted + failed sections)
-  main.js           lifecycle wiring (lazy screens, jsPDF fetched on demand)
+  main.js           lifecycle wiring: imports screens on demand, jsPDF fetched on demand
 data/questions.js   generated dataset (do not edit by hand); fetched on the first
                     "Comenzar test", never in the entry bundle
 data/rules.js       extracted rules text: read by tests/tools only, not shipped
@@ -79,6 +78,7 @@ odd/tasks/          feature document (specs, tasks, log)
 
 ```bash
 pnpm test          # node --test tests/*.test.mjs
+pnpm lint          # eslint flat config: no semicolons, single quotes, 2-space
 ```
 
 Covers dataset integrity, the 75%-of-answers pass rule, per-answer grading, the
