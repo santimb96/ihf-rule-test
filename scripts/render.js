@@ -1,140 +1,117 @@
-/**
- * Small DOM helpers shared by every screen: element building, screen
- * switching, toasts and the inline icon set loaded asynchronously from assets.
- */
-(function (global) {
-  "use strict";
+const ICONS = {}
+const iconPromises = {}
 
-  var ICONS = {};
-  var iconPromises = {};
+const ICON_NAMES = [
+  'check', 'alert', 'dash', 'x', 'bulb', 'left', 'right',
+  'flag', 'download', 'refresh', 'grid', 'close', 'doc', 'clock', 'chart', 'github', 'issue',
+]
 
-  var ICON_NAMES = [
-    "check", "alert", "dash", "x", "bulb", "left", "right",
-    "flag", "download", "refresh", "grid", "close", "doc", "clock", "chart", "github", "issue"
-  ];
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const SVG_TAGS = new Set(['svg', 'circle', 'path', 'rect', 'line', 'g', 'ellipse', 'polyline', 'polygon'])
 
-  // Fetched on first use: asking for all 17 at parse time put 17 high-priority
-  // requests in front of the LCP resources. A screen only draws a handful.
-  function loadIcon(name) {
-    if (ICON_NAMES.indexOf(name) === -1) return Promise.resolve("");
-    if (!iconPromises[name]) {
-      iconPromises[name] = fetch("./assets/icons/" + name + ".svg")
-        .then(function (res) { return res.text(); })
-        .then(function (svg) {
-          ICONS[name] = svg;
-          return svg;
-        })
-        .catch(function () {
-          ICONS[name] = "";
-          return "";
-        });
-    }
-    return iconPromises[name];
+// Fetched on first use: asking for all 17 at parse time put 17 high-priority
+// requests in front of the LCP resources. A screen only draws a handful.
+const loadIcon = (name) => {
+  if (!ICON_NAMES.includes(name)) return Promise.resolve('')
+  if (!iconPromises[name]) {
+    iconPromises[name] = fetch(`./assets/icons/${name}.svg`)
+      .then((response) => response.text())
+      .then((svg) => {
+        ICONS[name] = svg
+        return svg
+      })
+      .catch(() => {
+        ICONS[name] = ''
+        return ''
+      })
   }
+  return iconPromises[name]
+}
 
-  function append(node, child) {
-    if (child == null || child === false) return;
-    if (Array.isArray(child)) {
-      child.forEach(function (c) {
-        append(node, c);
-      });
-      return;
-    }
-    if (child instanceof Node) {
-      node.appendChild(child);
-      return;
-    }
-    node.appendChild(document.createTextNode(String(child)));
+export const append = (node, child) => {
+  if (child == null || child === false) return
+  if (Array.isArray(child)) {
+    child.forEach((entry) => append(node, entry))
+    return
   }
-
-  var SVG_NS = "http://www.w3.org/2000/svg";
-  var SVG_TAGS = { svg: 1, circle: 1, path: 1, rect: 1, line: 1, g: 1, ellipse: 1, polyline: 1, polygon: 1 };
-
-  function el(tag, props) {
-    var node = SVG_TAGS[tag] ? document.createElementNS(SVG_NS, tag) : document.createElement(tag);
-    props = props || {};
-    Object.keys(props).forEach(function (key) {
-      var value = props[key];
-      if (value == null || value === false) return;
-      if (key === "class") node.setAttribute("class", value);
-      else if (key === "text") node.textContent = value;
-      else if (key === "html") node.innerHTML = value;
-      else if (key === "style" && typeof value === "object") Object.assign(node.style, value);
-      else if (key === "dataset") Object.assign(node.dataset, value);
-      else if (key === "on") {
-        Object.keys(value).forEach(function (evt) {
-          node.addEventListener(evt, value[evt]);
-        });
-      } else if (key !== "kids") node.setAttribute(key, value === true ? "" : value);
-    });
-    append(node, props.kids);
-    for (var i = 2; i < arguments.length; i++) append(node, arguments[i]);
-    return node;
+  if (child instanceof Node) {
+    node.appendChild(child)
+    return
   }
+  node.appendChild(document.createTextNode(String(child)))
+}
 
-  function clear(node) {
-    while (node.firstChild) node.removeChild(node.firstChild);
+export const el = (tag, props, ...children) => {
+  const options = props || {}
+  const node = SVG_TAGS.has(tag) ? document.createElementNS(SVG_NS, tag) : document.createElement(tag)
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value == null || value === false) return
+    if (key === 'class') node.setAttribute('class', value)
+    else if (key === 'text') node.textContent = value
+    else if (key === 'html') node.innerHTML = value
+    else if (key === 'style' && typeof value === 'object') Object.assign(node.style, value)
+    else if (key === 'dataset') Object.assign(node.dataset, value)
+    else if (key === 'on') {
+      Object.entries(value).forEach(([event, handler]) => node.addEventListener(event, handler))
+    } else if (key !== 'kids') node.setAttribute(key, value === true ? '' : value)
+  })
+
+  append(node, options.kids)
+  children.forEach((child) => append(node, child))
+  return node
+}
+
+export const clear = (node) => {
+  while (node.firstChild) node.removeChild(node.firstChild)
+}
+
+export const mount = (node, children) => {
+  clear(node)
+  append(node, children)
+  return node
+}
+
+export const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+
+export const showScreen = (id) => {
+  const target = document.getElementById(id)
+  const wasHidden = target.classList.contains('hidden')
+
+  document.querySelectorAll('.screen').forEach((screen) => {
+    screen.classList.add('hidden')
+  })
+
+  target.classList.remove('hidden')
+  // Only swapped-in screens animate: the setup screen ships visible, and an
+  // entry animation there paints the hero at opacity 0 on first load.
+  if (wasHidden) target.classList.add('screen-enter')
+  target.style.animation = 'none'
+  void target.offsetHeight
+  target.style.animation = ''
+  window.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' })
+}
+
+let toastTimer = null
+
+export const toast = (message) => {
+  const node = document.getElementById('toast')
+  if (node.textContent !== message) node.textContent = message
+  node.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    node.classList.remove('show')
+  }, 2600)
+}
+
+export const icon = (name, className) => {
+  const span = el('span', { class: className || 'h-5 w-5' })
+  if (ICONS[name]) {
+    span.innerHTML = ICONS[name]
+  } else {
+    loadIcon(name).then((svg) => {
+      span.innerHTML = svg
+    })
   }
-
-  function mount(node, children) {
-    clear(node);
-    append(node, children);
-    return node;
-  }
-
-  function reducedMotion() {
-    return !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }
-
-  function showScreen(id) {
-    var target = document.getElementById(id);
-    var wasHidden = target.classList.contains("hidden");
-    document.querySelectorAll(".screen").forEach(function (screen) {
-      screen.classList.add("hidden");
-    });
-    target.classList.remove("hidden");
-    // Only swapped-in screens animate: the setup screen ships visible, and an
-    // entry animation there paints the hero at opacity 0 on first load, which
-    // costs the LCP candidate (see styles.css).
-    if (wasHidden) target.classList.add("screen-enter");
-    target.style.animation = "none";
-    void target.offsetHeight;
-    target.style.animation = "";
-    window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
-  }
-
-  var toastTimer = null;
-  function toast(message) {
-    var node = document.getElementById("toast");
-    if (node.textContent !== message) node.textContent = message;
-    node.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () {
-      node.classList.remove("show");
-    }, 2600);
-  }
-
-  function icon(name, className) {
-    var span = el("span", { class: className || "h-5 w-5" });
-    if (ICONS[name]) {
-      span.innerHTML = ICONS[name];
-    } else {
-      loadIcon(name).then(function (svg) {
-        span.innerHTML = svg;
-      });
-    }
-    return span;
-  }
-
-  global.IHFRender = {
-    el: el,
-    append: append,
-    clear: clear,
-    mount: mount,
-    showScreen: showScreen,
-    toast: toast,
-    icon: icon,
-    ICONS: ICONS,
-    reducedMotion: reducedMotion,
-  };
-})(globalThis);
+  return span
+}

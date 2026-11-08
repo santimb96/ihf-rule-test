@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "virtual:ihf-catalogue-meta": ["./scripts/catalogue-meta.js"]
+    }
+  },
+  "include": ["scripts/**/*.js", "tests/**/*.mjs", "vite.config.js"]
+}

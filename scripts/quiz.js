@@ -1,95 +1,67 @@
-/**
- * Quiz engine: builds a randomized attempt over a question pool, tracks the
- * selected options per question and produces the final report used by both
- * the results screen and the PDF export.
- */
-(function (global) {
-  "use strict";
+import { passes, percentage, questionPoints, questionStatus, requiredCorrect } from './scoring.js'
 
-  var Scoring = global.IHFScoring;
-  if (!Scoring && typeof require === "function") Scoring = require("./scoring.js");
-
-  function defaultRng() {
-    return Math.random();
+// Fisher-Yates, so a fixed rng makes attempts reproducible in tests.
+export const shuffle = (items, rng) => {
+  const out = items.slice()
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    const swap = out[i]
+    out[i] = out[j]
+    out[j] = swap
   }
+  return out
+}
 
-  /** Fisher-Yates shuffle so a fixed rng makes attempts reproducible in tests. */
-  function shuffle(items, rng) {
-    var out = items.slice();
-    for (var i = out.length - 1; i > 0; i--) {
-      var j = Math.floor(rng() * (i + 1));
-      var tmp = out[i];
-      out[i] = out[j];
-      out[j] = tmp;
-    }
-    return out;
-  }
+export const createQuiz = ({ pool = [], size, rng = Math.random }) => {
+  const count = Math.min(size, pool.length)
+  const items = shuffle(pool, rng).slice(0, count)
+  const selected = items.map(() => [])
 
-  function createQuiz(options) {
-    var pool = options.pool || [];
-    var size = options.size;
-    var rng = options.rng || defaultRng;
+  return {
+    items,
 
-    // Allow test to proceed with fewer questions than requested;
-    // use the actual pool size when it is smaller.
-    if (pool.length < size) size = pool.length;
+    select (index, letters) {
+      selected[index] = letters.slice()
+    },
 
-    var items = shuffle(pool, rng).slice(0, size);
-    var selected = items.map(function () {
-      return [];
-    });
+    selected (index) {
+      return selected[index].slice()
+    },
 
-    return {
-      items: items,
+    answeredCount () {
+      return selected.filter((letters) => letters.length > 0).length
+    },
 
-      select: function (index, letters) {
-        selected[index] = letters.slice();
-      },
+    report () {
+      let score = 0
+      let totalAnswers = 0
 
-      selected: function (index) {
-        return selected[index].slice();
-      },
-
-      answeredCount: function () {
-        return selected.filter(function (s) {
-          return s.length > 0;
-        }).length;
-      },
-
-      report: function () {
-        var score = 0;
-        var totalAnswers = 0;
-        var results = items.map(function (question, index) {
-          var picked = selected[index];
-          var points = Scoring.questionPoints(picked, question.answer);
-          score += points;
-          totalAnswers += question.answer.length;
-          return {
-            question: question,
-            selected: picked.slice(),
-            points: points,
-            status: Scoring.questionStatus(picked, question.answer),
-            correct: points === question.answer.length,
-          };
-        });
-        var correct = results.filter(function (r) {
-          return r.correct;
-        }).length;
+      const results = items.map((question, index) => {
+        const picked = selected[index]
+        const points = questionPoints(picked, question.answer)
+        score += points
+        totalAnswers += question.answer.length
         return {
-          total: items.length,
-          totalAnswers: totalAnswers,
-          score: score,
-          correct: correct,
-          results: results,
-          percentage: Scoring.percentage(score, totalAnswers),
-          passed: Scoring.passes(score, totalAnswers),
-          required: Scoring.requiredCorrect(totalAnswers),
-        };
-      },
-    };
-  }
+          question,
+          selected: picked.slice(),
+          points,
+          status: questionStatus(picked, question.answer),
+          correct: points === question.answer.length,
+        }
+      })
 
-  var api = { createQuiz: createQuiz, shuffle: shuffle };
-  global.IHFQuiz = api;
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof globalThis !== "undefined" ? globalThis : this);
+      const correct = results.filter((result) => result.correct).length
+
+      return {
+        total: items.length,
+        totalAnswers,
+        score,
+        correct,
+        results,
+        percentage: percentage(score, totalAnswers),
+        passed: passes(score, totalAnswers),
+        required: requiredCorrect(totalAnswers),
+      }
+    },
+  }
+}

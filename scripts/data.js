@@ -1,205 +1,181 @@
-/**
- * Read-only access to the generated dataset plus the parsing of the answer
- * catalogue's "Rules reference" field into human readable hint chips, each
- * deep-linked to the right page of the Rules of Game PDF.
- *
- * Two layers on purpose: the metadata (labels, per-topic counts) ships in the
- * entry bundle through virtual:ihf-catalogue-meta, and the 330 KB question
- * dataset is a separate chunk fetched by load() on the first "Comenzar test".
- * The tests evaluate data/questions.js directly, so the metadata is derived
- * from the dataset whenever IHF_META is absent.
- */
-(function (global) {
-  "use strict";
+const RULES_PDF = 'documents/Reglas de Juego (Septiembre 2025) Web.pdf'
 
-  var metaBundle = global.IHF_META || null;
-  var loading = null;
+// Chapter starts for references that are not plain rule paragraphs.
+const SPECIAL_PAGES = [
+  { test: /aclaraci[oó]n|clarification/i, page: 68 },
+  { test: /directriz|guideline/i, page: 95 },
+  { test: /zona de cambios|substitution area/i, page: 92 },
+  { test: /ap[eé]ndice|appendix/i, page: 68 },
+]
 
-  function dataset() {
-    return global.IHF_DATA || null;
+const ORDINALS = { first: '1er', second: '2º', third: '3er' }
+
+// The metadata ships with the first paint and the 330 KB dataset arrives later,
+// on the first test. The tests derive the metadata from the dataset instead.
+let catalogue = null
+let loading = null
+
+const dataset = () => globalThis.IHF_DATA || null
+
+const countTopics = (data) => {
+  const counts = {}
+  data.topics.forEach((topic) => {
+    counts[topic.id] = 0
+  })
+  data.questions.forEach((question) => {
+    counts[question.topic] = (counts[question.topic] || 0) + 1
+  })
+  return counts
+}
+
+const ensureMeta = () => {
+  if (!catalogue) {
+    const data = dataset()
+    if (!data) throw new Error('catalogue metadata is not configured')
+    catalogue = { meta: data.meta, topics: data.topics, counts: countTopics(data) }
+  }
+  return catalogue
+}
+
+const requireDataset = (what) => {
+  const data = dataset()
+  if (!data) throw new Error(`question dataset not loaded; call load() before ${what}`)
+  return data
+}
+
+const translate = (segment) => {
+  if (/^electronic team time-out regulations$/i.test(segment)) return 'Reglamento de tiempo muerto electrónico'
+  if (/^video replay regulations$/i.test(segment)) return 'Reglamento de video replay'
+
+  const area = segment.match(/^substitution area regulations\s*(.*)$/i)
+  if (area) return area[1] ? `Reglamento de zona de cambios ${area[1]}` : 'Reglamento de zona de cambios'
+
+  if (/^regulations on protective equipment and accessories$/i.test(segment)) {
+    return 'Reglamento de equipación y accesorios protectores'
   }
 
-  function countTopics(data) {
-    var counts = {};
-    data.topics.forEach(function (topic) {
-      counts[topic.id] = 0;
-    });
-    data.questions.forEach(function (question) {
-      counts[question.topic] = (counts[question.topic] || 0) + 1;
-    });
-    return counts;
+  const appendix = segment.match(/^appendix\s*(.*)$/i)
+  if (appendix) return `Apéndice ${appendix[1]}`
+  if (/^hand signals$/i.test(segment)) return 'Gestoformas'
+
+  const related = segment.match(/^in connection with\s*(.*)$/i)
+  if (related) return `en relación con ${related[1]}`
+
+  return null
+}
+
+const labelFor = (segment) => {
+  const text = segment.trim()
+
+  const rule = text.match(/^(\d{1,2})[:.](\d+[a-z]?(?:-\d+[a-z])?)([\s\S]*)$/i)
+  if (rule) {
+    const label = `Regla ${rule[1]}:${rule[2]}`
+    const tail = rule[3].trim()
+    if (!tail) return label
+    if (/^comments?$/i.test(tail)) return `${label} (comentario)`
+    if (/^note$/i.test(tail)) return `${label} (nota)`
+    if (/hand signals/i.test(tail)) return `${label} (gestoformas)`
+    if (/^and guideline/i.test(tail)) return `${label} + directriz`
+    return `${label} · ${tail}`
   }
 
-  function ensureMeta() {
-    if (!metaBundle) {
-      var data = dataset();
-      if (!data) throw new Error("IHF_META is not loaded");
-      metaBundle = { meta: data.meta, topics: data.topics, counts: countTopics(data) };
-    }
-    return metaBundle;
+  const clarification = text.match(/^(?:clarification|aclaraci[oó]n)\s*(?:no\.?\s*)?([\s\S]*)$/i)
+  if (clarification) {
+    const rest = (clarification[1] || '').trim().replace(/\band\b/gi, 'y')
+    return rest ? `Aclaración ${rest}` : 'Aclaración'
   }
 
-  function requireDataset(what) {
-    var data = dataset();
-    if (!data) throw new Error("question dataset not loaded; call IHFData.load() before " + what);
-    return data;
-  }
+  if (/^guidelines$/i.test(text)) return 'Directrices'
+  if (/^new guideline$/i.test(text)) return 'Directriz nueva'
 
-  /** Fetches the question dataset once; the promise is cached and retried on failure. */
-  function load() {
-    if (dataset()) return Promise.resolve(dataset());
-    if (!loading) {
-      loading = import("../data/questions.js")
-        .then(function () {
-          return requireDataset("starting the test");
-        })
-        .catch(function (error) {
-          loading = null;
-          throw error;
-        });
-    }
-    return loading;
-  }
+  const guidelineRule = text.match(/^guideline\s+rule\s+([\s\S]*)$/i)
+  if (guidelineRule) return `Directriz regla ${guidelineRule[1]}`
 
-  var RULES_PDF = "documents/Reglas de Juego (Septiembre 2025) Web.pdf";
+  const guideline = text.match(/^guideline\s+([\s\S]*)$/i)
+  if (guideline) return guideline[1].trim() ? `Directriz ${guideline[1].trim()}` : 'Directriz'
 
-  // Chapter starts inside the Rules of Game PDF for references that are not
-  // plain rule paragraphs (Aclaraciones = II, Zona de cambios = III, Directrices = IV).
-  var SPECIAL_PAGES = [
-    { test: /aclaraci[oó]n|clarification/i, page: 68 },
-    { test: /directriz|guideline/i, page: 95 },
-    { test: /zona de cambios|substitution area/i, page: 92 },
-    { test: /ap[eé]ndice|appendix/i, page: 68 },
-  ];
+  const ordinal = text.match(/^(\d+)(?:st|nd|rd|th)\s+paragraph$/i)
+  if (ordinal) return `${ordinal[1]}º párrafo`
 
-  var ORDINALS = { first: "1er", second: "2º", third: "3er" };
+  const ordinalWord = text.match(/^(first|second|third)\s+paragraph$/i)
+  if (ordinalWord) return `${ORDINALS[ordinalWord[1].toLowerCase()]} párrafo`
 
-  function translate(segment) {
-    var rules;
-    if ((rules = segment.match(/^electronic team time-out regulations$/i))) return "Reglamento de tiempo muerto electrónico";
-    if ((rules = segment.match(/^video replay regulations$/i))) return "Reglamento de video replay";
-    if ((rules = segment.match(/^substitution area regulations\s*(.*)$/i))) return "Reglamento de zona de cambios" + (rules[1] ? " " + rules[1] : "");
-    if ((rules = segment.match(/^regulations on protective equipment and accessories$/i))) return "Reglamento de equipación y accesorios protectores";
-    if ((rules = segment.match(/^appendix\s*(.*)$/i))) return "Apéndice " + rules[1];
-    if (/^hand signals$/i.test(segment)) return "Gestoformas";
-    if ((rules = segment.match(/^in connection with\s*(.*)$/i))) return "en relación con " + rules[1];
-    return null;
-  }
+  const paragraph = text.match(/^paragraph\s+(\d+)$/i)
+  if (paragraph) return `Párrafo ${paragraph[1]}`
 
-  function labelFor(segment) {
-    var s = segment.trim();
-    var m;
+  if (/^comments$/i.test(text)) return 'Comentarios'
+  if (/^comment$/i.test(text)) return 'Comentario'
+  if (/^note$/i.test(text)) return 'Nota'
 
-    // Plain rule paragraph: "2:10", "16:3a", "7:11-12", "2:2 comment", "12:1 – Hand signals".
-    if ((m = s.match(/^(\d{1,2})[:.](\d+[a-z]?(?:-\d+[a-z])?)([\s\S]*)$/i))) {
-      var label = "Regla " + m[1] + ":" + m[2];
-      var tail = m[3].trim();
-      if (!tail) return label;
-      if (/^comments?$/i.test(tail)) return label + " (comentario)";
-      if (/^note$/i.test(tail)) return label + " (nota)";
-      if (/hand signals/i.test(tail)) return label + " (gestoformas)";
-      if (/^and guideline/i.test(tail)) return label + " + directriz";
-      return label + " · " + tail;
-    }
+  return translate(text) || text
+}
 
-    // Clarifications from section II of the Rules of Game.
-    if ((m = s.match(/^(?:clarification|aclaraci[oó]n)\s*(?:no\.?\s*)?([\s\S]*)$/i))) {
-      var rest = (m[1] || "").trim().replace(/\band\b/gi, "y");
-      return rest ? "Aclaración " + rest : "Aclaración";
-    }
+const topicPage = (id) => ensureMeta().topics.find((topic) => topic.id === id)?.rulesPage
 
-    if (/^guidelines$/i.test(s)) return "Directrices";
-    if (/^new guideline$/i.test(s)) return "Directriz nueva";
-    if ((m = s.match(/^guideline\s+rule\s+([\s\S]*)$/i))) return "Directriz regla " + m[1];
-    if ((m = s.match(/^guideline\s+([\s\S]*)$/i))) {
-      return m[1].trim() ? "Directriz " + m[1].trim() : "Directriz";
-    }
+const pageFor = (segment, question) => {
+  const rule = segment.match(/^(\d{1,2})[:.]/)
+  if (rule && topicPage(rule[1])) return topicPage(rule[1])
 
-    if ((m = s.match(/^(\d+)(?:st|nd|rd|th)\s+paragraph$/i))) return m[1] + "º párrafo";
-    if ((m = s.match(/^(first|second|third)\s+paragraph$/i))) return ORDINALS[m[1].toLowerCase()] + " párrafo";
-    if ((m = s.match(/^paragraph\s+(\d+)$/i))) return "Párrafo " + m[1];
-    if (/^comments$/i.test(s)) return "Comentarios";
-    if (/^comment$/i.test(s)) return "Comentario";
-    if (/^note$/i.test(s)) return "Nota";
+  const special = SPECIAL_PAGES.find((entry) => entry.test.test(segment))
+  if (special) return special.page
 
-    return translate(s) || s;
-  }
+  // Standalone regulations (video replay, team time-out) are not in the PDF.
+  if (/regulations/i.test(segment) && !/substitution area/i.test(segment)) return null
+  return topicPage(question.topic) || null
+}
 
-  function topicPage(id) {
-    var topics = ensureMeta().topics;
-    for (var i = 0; i < topics.length; i++) {
-      if (topics[i].id === id) return topics[i].rulesPage;
-    }
-    return undefined;
-  }
+export const configureCatalogue = (bundle) => {
+  catalogue = bundle
+}
 
-  function pageFor(segment, question) {
-    var m = segment.match(/^(\d{1,2})[:.]/);
-    if (m && topicPage(m[1])) return topicPage(m[1]);
-    for (var i = 0; i < SPECIAL_PAGES.length; i++) {
-      if (SPECIAL_PAGES[i].test.test(segment)) return SPECIAL_PAGES[i].page;
-    }
-    // Standalone regulations (video replay, team time-out...) are not in the rules PDF.
-    if (/regulations/i.test(segment) && !/substitution area/i.test(segment)) return null;
-    return topicPage(question.topic) || null;
-  }
+export const getMeta = () => ensureMeta().meta
 
-  function chips(question) {
-    var seen = {};
-    return question.rules
-      .split(",")
-      .map(function (s) {
-        return s.trim();
+export const topics = () => ensureMeta().topics
+
+export const questions = () => requireDataset('reading the questions').questions
+
+export const topicLabel = (id) => ensureMeta().topics.find((topic) => topic.id === id)?.label || id
+
+// Number of questions a topic selection would draw from, without the dataset.
+export const poolSize = (topicIds) => {
+  const { counts } = ensureMeta()
+  return topicIds.reduce((sum, id) => sum + (counts[id] || 0), 0)
+}
+
+export const pool = (topicIds) => {
+  const wanted = new Set(topicIds)
+  return requireDataset('building the test').questions.filter((question) => wanted.has(question.topic))
+}
+
+export const loaded = () => !!dataset()
+
+// Fetches the dataset once; the promise is cached and retried on failure.
+export const load = () => {
+  if (dataset()) return Promise.resolve(dataset())
+  if (!loading) {
+    loading = import('../data/questions.js')
+      .then(() => requireDataset('starting the test'))
+      .catch((error) => {
+        loading = null
+        throw error
       })
-      .filter(Boolean)
-      .map(function (segment) {
-        var label = labelFor(segment);
-        if (seen[label]) return null;
-        seen[label] = true;
-        return { raw: segment, label: label, page: pageFor(segment, question) };
-      })
-      .filter(Boolean);
   }
+  return loading
+}
 
-  function rulesUrl(page) {
-    return page ? encodeURI(RULES_PDF) + "#page=" + page : null;
-  }
+export const chips = (question) => {
+  const seen = new Set()
+  return question.rules
+    .split(',')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const label = labelFor(segment)
+      if (seen.has(label)) return null
+      seen.add(label)
+      return { raw: segment, label, page: pageFor(segment, question) }
+    })
+    .filter(Boolean)
+}
 
-  var api = {
-    meta: ensureMeta().meta,
-    topics: function () {
-      return ensureMeta().topics;
-    },
-    questions: function () {
-      return requireDataset("reading the questions").questions;
-    },
-    topicLabel: function (id) {
-      var found = ensureMeta().topics.filter(function (t) {
-        return t.id === id;
-      })[0];
-      return found ? found.label : id;
-    },
-    /** Number of questions a topic selection would draw from, without the dataset. */
-    poolSize: function (topicIds) {
-      var counts = ensureMeta().counts;
-      return topicIds.reduce(function (sum, id) {
-        return sum + (counts[id] || 0);
-      }, 0);
-    },
-    pool: function (topicIds) {
-      var data = requireDataset("building the test");
-      var wanted = new Set(topicIds);
-      return data.questions.filter(function (q) {
-        return wanted.has(q.topic);
-      });
-    },
-    loaded: function () {
-      return !!dataset();
-    },
-    load: load,
-    chips: chips,
-    rulesUrl: rulesUrl,
-  };
-
-  global.IHFData = api;
-})(globalThis);
+export const rulesUrl = (page) => (page ? `${encodeURI(RULES_PDF)}#page=${page}` : null)
