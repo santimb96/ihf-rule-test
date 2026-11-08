@@ -70,8 +70,16 @@ test('chips citing a clarification resolve to that clarification', () => {
   const clarifications = allChips().filter((chip) => /^(clarification|aclaraci)/i.test(chip.raw))
   assert.ok(clarifications.length >= 50, `expected clarification references, got ${clarifications.length}`)
 
-  const missing = clarifications.filter((chip) => !chip.quote)
+  // A citation that names no number cannot resolve: it keeps the chip and the
+  // page link, like the regulations outside the rules PDF.
+  const numbered = clarifications.filter((chip) => /\d/.test(chip.raw))
+  const missing = numbered.filter((chip) => !chip.quote)
   assert.equal(missing.length, 0, `unresolved: ${missing.map((chip) => `${chip.qid}:${chip.raw}`).slice(0, 8)}`)
+
+  const unnumbered = clarifications.filter((chip) => !/\d/.test(chip.raw))
+  for (const chip of unnumbered) {
+    assert.equal(chip.quote, null, `${chip.raw} cites no number, so it cannot quote`)
+  }
 
   const sevenB = clarifications.find((chip) => /^Clarification 7B$/i.test(chip.raw))
   assert.ok(sevenB && sevenB.quote.text.includes('INTERRUPCIÓN'), '7B must quote its sub-block')
@@ -79,11 +87,18 @@ test('chips citing a clarification resolve to that clarification', () => {
 
 test('chips citing a guideline fall back to the guideline or the rule text', () => {
   requireRules()
+  // The July 2025 Spanish catalogue cites 10 guidelines.
   const guidelines = allChips().filter((chip) => /^guideline/i.test(chip.raw))
-  assert.ok(guidelines.length >= 15, `expected guideline references, got ${guidelines.length}`)
+  assert.ok(guidelines.length >= 10, `expected guideline references, got ${guidelines.length}`)
 
-  const missing = guidelines.filter((chip) => !chip.quote)
+  const numbered = guidelines.filter((chip) => /\d/.test(chip.raw))
+  const missing = numbered.filter((chip) => !chip.quote)
   assert.equal(missing.length, 0, `unresolved: ${missing.map((chip) => `${chip.qid}:${chip.raw}`)}`)
+
+  const unnumbered = guidelines.filter((chip) => !/\d/.test(chip.raw))
+  for (const chip of unnumbered) {
+    assert.equal(chip.quote, null, `${chip.raw} cites no rule, so it cannot quote`)
+  }
 })
 
 test('regulations outside the rules PDF keep a chip without a quote', () => {

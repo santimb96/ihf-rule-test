@@ -112,6 +112,58 @@ const labelFor = (segment) => {
 
 const topicPage = (id) => ensureMeta().topics.find((topic) => topic.id === id)?.rulesPage
 
+// The rules dataset (243 KB) ships only with the tests and the extractor today,
+// so quotes stay null until the hint panel loads it.
+const rulesDataset = () => globalThis.IHF_RULES || null
+
+// Mirrors tools/extract_rules.py: the same keys the extractor validates against.
+const clarificationKeys = (segment) => {
+  const rest = segment.replace(/^(?:clarification|aclaraci[oó]n)\s*(?:no\.?\s*)?/i, '')
+  const match = rest.match(/^(\d{1,2})(?:\.?([A-Za-z]))?(?:\.(\d{1,2}))?/)
+  if (!match) return []
+
+  const [, number, letter, nested] = match
+  const keys = []
+  if (letter && nested) keys.push(`${number}.${letter}.${nested}`)
+  if (letter) keys.push(`${number}.${letter}`, `${number}${letter}`)
+  keys.push(number)
+  return keys
+}
+
+const quoteFor = (segment) => {
+  const rules = rulesDataset()
+  if (!rules) return null
+
+  if (/^(?:clarification|aclaraci[oó]n)/i.test(segment)) {
+    const keys = clarificationKeys(segment)
+    const block = keys.map((key) => rules.aclaraciones[key]).find(Boolean)
+    return block ? { page: block.page, text: block.text } : null
+  }
+
+  if (/^guideline/i.test(segment)) {
+    const cited = segment.match(/(\d{1,2})[:.](\d+)/)
+    if (!cited) return null
+    const key = `${cited[1]}:${cited[2]}`
+    const block = (rules.directrices[key] || [])[0] || rules.paragraphs[key]
+    return block ? { page: block.page, text: block.text } : null
+  }
+
+  const rule = segment.match(/^(\d{1,2})[:.](\d+)(?:-(\d+))?/)
+  if (!rule) return null
+
+  const first = Number(rule[2])
+  const last = Number(rule[3] || rule[2])
+  const blocks = []
+  for (let number = first; number <= last; number++) {
+    const block = rules.paragraphs[`${rule[1]}:${number}`]
+    if (!block) return null
+    blocks.push(block)
+  }
+  if (!blocks.length) return null
+
+  return { page: blocks[0].page, text: blocks.map((block) => block.text).join(' ') }
+}
+
 const pageFor = (segment, question) => {
   const rule = segment.match(/^(\d{1,2})[:.]/)
   if (rule && topicPage(rule[1])) return topicPage(rule[1])
@@ -173,7 +225,7 @@ export const chips = (question) => {
       const label = labelFor(segment)
       if (seen.has(label)) return null
       seen.add(label)
-      return { raw: segment, label, page: pageFor(segment, question) }
+      return { raw: segment, label, page: pageFor(segment, question), quote: quoteFor(segment) }
     })
     .filter(Boolean)
 }
