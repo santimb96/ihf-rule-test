@@ -270,7 +270,7 @@
           "figure",
           { class: "shrink-0 lg:w-[440px]" },
           el("img", {
-            src: "assets/screenshots/results-screen.png",
+            src: "assets/screenshots/results-screen.webp",
             alt: "Pantalla de resultados de un test: anillo con el porcentaje de aciertos, botones para descargar el informe PDF o repetir el test y revisión pregunta a pregunta",
             width: "1440",
             height: "900",
