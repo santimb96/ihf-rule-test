@@ -10,6 +10,9 @@
   var S = global.IHFScoring;
   var el = R.el;
 
+  // Static hero node from index.html, kept across mounts (see mount()).
+  var heroNode = null;
+
   function mount(root, ctx) {
     var topics = D.topics();
     var selected = new Set(
@@ -20,7 +23,7 @@
     var size = 10;
 
     var poolSize = function () {
-      return D.pool(Array.from(selected)).length;
+      return D.poolSize(Array.from(selected));
     };
 
     var chipNodes = [];
@@ -141,7 +144,7 @@
       checkIcon.style.opacity = "0";
       var check = el("span", { class: chipCheck(false), kids: [checkIcon] });
       var badge = el("span", { class: chipBadge(false), text: topic.id === "SAR" ? "ZC" : topic.id });
-      var count = D.pool([topic.id]).length;
+      var count = D.poolSize([topic.id]);
       var button = el(
         "button",
         {
@@ -208,79 +211,24 @@
       return button;
     }
 
-    // Background texture with intent: a regulation handball court drawn in
-    // line art, cropped by the hero. Replaces the two blurred colour blobs
-    // that were pure filler behind the headline.
-    var courtSvg = el("svg", {
-      viewBox: "0 0 400 200",
-      width: "820",
-      height: "410",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": "3",
-      "aria-hidden": "true",
-      focusable: "false",
-      kids: [
-        el("rect", { x: "1.5", y: "1.5", width: "397", height: "197" }),
-        el("line", { x1: "200", y1: "1.5", x2: "200", y2: "198.5" }),
-        el("path", { d: "M1.5 25 A60 60 0 0 1 60 85 L60 115 A60 60 0 0 1 1.5 175" }),
-        el("path", { d: "M398.5 25 A60 60 0 0 0 340 85 L340 115 A60 60 0 0 0 398.5 175" }),
-        el("line", { x1: "1.5", y1: "85", x2: "1.5", y2: "115", "stroke-width": "9" }),
-        el("line", { x1: "398.5", y1: "85", x2: "398.5", y2: "115", "stroke-width": "9" }),
-      ],
-    });
-
-    var hero = el(
-      "div",
-      { class: "relative overflow-hidden rounded-md bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-6 text-white shadow-lift sm:p-8" },
-      el("div", {
-        class: "pointer-events-none absolute -right-20 top-1/2 hidden -translate-y-1/2 text-white opacity-[0.15] sm:block",
-        kids: [courtSvg],
-      }),
-      el(
-        "div",
-        { class: "relative flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10" },
-        el(
-          "div",
-          { class: "min-w-0 flex-1" },
-          el("h1", { class: "font-display text-3xl font-bold leading-tight text-balance sm:text-4xl", text: "Prepara tu test de reglas de juego" }),
-          el("p", {
-            class: "mt-3 max-w-xl text-sm leading-relaxed text-brand-100/90 sm:text-base",
-            text: D.meta.questionCount +
-              " preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.",
-          }),
-          // The pass rule is the one datum a first-time visitor needs before
-          // starting, and it is real (PASS_RATIO in scoring.js), unlike the
-          // removed "≈ minutes" strip.
-          el(
-            "p",
-            {
-              class: "mt-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 sm:text-sm",
-            },
-            R.icon("check", "h-3.5 w-3.5 shrink-0 text-accent-300"),
-            "Se aprueba con ≥75% de respuestas correctas",
-          ),
-          // No "200 preguntas · 19 temas" pill row: the sentence above already
-          // states those figures with their source. A second strip of bare
-          // numbers is decoration, not information.
-        ),
-        // Real product screenshot (no stock imagery): the results screen of a
-        // genuine test run, captured from this build.
-        el(
-          "figure",
-          { class: "shrink-0 lg:w-[440px]" },
-          el("img", {
-            src: "assets/screenshots/results-screen.webp",
-            alt: "Pantalla de resultados de un test: anillo con el porcentaje de aciertos, botones para descargar el informe PDF o repetir el test y revisión pregunta a pregunta",
-            width: "1440",
-            height: "900",
-            decoding: "async",
-            class: "w-full border border-white/25 shadow-2xl",
-          }),
-          el("figcaption", { class: "mt-2 text-[11px] leading-snug text-white/60", text: "Así se ve el informe al terminar un test." }),
-        ),
-      ),
-    );
+    // The hero is static markup in index.html: it is the first paint and holds
+    // the LCP screenshot, so it must not wait for this script. The node is kept
+    // across mounts (returning from a test re-renders the cards around it) and
+    // only its dataset-derived figure is synced here.
+    if (!heroNode) {
+      heroNode = document.getElementById("setup-hero");
+      var countNode = heroNode && heroNode.querySelector("[data-question-count]");
+      if (countNode && countNode.textContent !== String(D.meta.questionCount)) {
+        countNode.textContent = String(D.meta.questionCount);
+      }
+    }
+    if (!heroNode) {
+      heroNode = el("h1", {
+        class: "rounded-md bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-6 font-display text-3xl font-bold text-white shadow-lift sm:p-8",
+        text: "Prepara tu test de reglas de juego",
+      });
+    }
+    var hero = heroNode;
 
     var topicsCard = el(
       "section",
@@ -435,7 +383,14 @@
       ),
     );
 
-    R.mount(root, [hero, topicsCard, sizesCard, summary, gitHubCard]);
+    // The hero stays attached: detaching it (even to append it back in the same
+    // batch) makes Chrome drop its paint as an LCP candidate, which would defeat
+    // having it in the initial HTML. Only the cards are rebuilt.
+    if (hero.parentNode !== root) root.insertBefore(hero, root.firstChild);
+    Array.prototype.slice.call(root.childNodes).forEach(function (child) {
+      if (child !== hero) root.removeChild(child);
+    });
+    R.append(root, [topicsCard, sizesCard, summary, gitHubCard]);
     sync();
     syncTopics();
   }

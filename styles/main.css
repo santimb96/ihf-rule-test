@@ -2,9 +2,12 @@
    styles/styles.css is loaded as a separate sheet after this file so the
    custom layer keeps overriding utilities, as documented at its top. */
 /* Body copy stays neutral (Inter); headings get a voice: Archivo, a sturdy
-   grotesque with its own personality (not the AI-default sans trio). */
+   grotesque with its own personality (not the AI-default sans trio).
+   Archivo is imported from the wght subset, not `standard`: the design never
+   uses the width axis, and `standard` ships wdth+wght (90 KB latin) where wght
+   alone is 35 KB — the display face is the largest font on the critical path. */
 @import "@fontsource-variable/inter/index.css";
-@import "@fontsource-variable/archivo/standard.css";
+@import "@fontsource-variable/archivo/wght.css";
 
 @tailwind base;
 @tailwind components;

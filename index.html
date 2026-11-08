@@ -27,6 +27,11 @@
   <meta name="twitter:image" content="https://non-official-ihf-rule-test.netlify.app/assets/og-image.png">
   <meta name="twitter:image:alt" content="Reglas de Juego de Balonmano: captura real de la pantalla de resultados de un test aprobado, con el informe PDF disponible.">
   <link rel="icon" type="image/png" href="./assets/icons/non-official-ihf-rule-test-icon.png">
+  <!-- The hero screenshot is the LCP element and it lives in the static markup
+       below, but a preload still starts the request before the parser reaches
+       it (LCP request discovery audit). Vite hashes both references to the same
+       URL, so the preload and the <img> share one download. -->
+  <link rel="preload" as="image" type="image/webp" href="./assets/screenshots/results-screen.webp" fetchpriority="high">
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="styles/styles.css">
   <script type="module" src="./scripts/app.js"></script>
@@ -55,7 +60,6 @@
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <div class="hidden items-center gap-2 sm:flex" id="header-stats"></div>
           <div class="flex items-center gap-2 empty:hidden" id="header-actions"></div>
           <button type="button" id="theme-toggle" class="grid h-11 w-11 place-items-center rounded border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Activar tema oscuro" aria-pressed="false">
             <svg class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -66,7 +70,37 @@
     </header>
 
     <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <section id="screen-setup" class="screen" aria-label="Configuración del test"></section>
+      <section id="screen-setup" class="screen" aria-label="Configuración del test">
+        <!-- Static hero: it is the first paint (and the LCP screenshot), so it
+             must not wait for the scripts. setup.js reuses this node on every
+             mount instead of rebuilding it. -->
+        <div id="setup-hero" class="relative overflow-hidden rounded-md bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-6 text-white shadow-lift sm:p-8">
+          <div class="pointer-events-none absolute -right-20 top-1/2 hidden -translate-y-1/2 text-white opacity-[0.15] sm:block">
+            <svg viewBox="0 0 400 200" width="820" height="410" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" focusable="false">
+              <rect x="1.5" y="1.5" width="397" height="197"/>
+              <line x1="200" y1="1.5" x2="200" y2="198.5"/>
+              <path d="M1.5 25 A60 60 0 0 1 60 85 L60 115 A60 60 0 0 1 1.5 175"/>
+              <path d="M398.5 25 A60 60 0 0 0 340 85 L340 115 A60 60 0 0 0 398.5 175"/>
+              <line x1="1.5" y1="85" x2="1.5" y2="115" stroke-width="9"/>
+              <line x1="398.5" y1="85" x2="398.5" y2="115" stroke-width="9"/>
+            </svg>
+          </div>
+          <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
+            <div class="min-w-0 flex-1">
+              <h1 class="font-display text-3xl font-bold leading-tight text-balance sm:text-4xl">Prepara tu test de reglas de juego</h1>
+              <p class="mt-3 max-w-xl text-sm leading-relaxed text-brand-100/90 sm:text-base"><span data-question-count>432</span> preguntas con sus respuestas y las directrices en las que se basan, extraídas del catálogo oficial IHF (ed. julio 2025). Filtra por tema, elige la longitud del test y responde a las preguntas.</p>
+              <p class="mt-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 sm:text-sm">
+                <span class="h-3.5 w-3.5 shrink-0 text-accent-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 13 4 4L19 7"/></svg></span>
+                Se aprueba con ≥75% de respuestas correctas
+              </p>
+            </div>
+            <figure class="shrink-0 lg:w-[440px]">
+              <img src="./assets/screenshots/results-screen.webp" alt="Pantalla de resultados de un test: anillo con el porcentaje de aciertos, botones para descargar el informe PDF o repetir el test y revisión pregunta a pregunta" width="1440" height="900" decoding="async" fetchpriority="high" class="w-full border border-white/25 shadow-2xl">
+              <figcaption class="mt-2 text-[11px] leading-snug text-white/60">Así se ve el informe al terminar un test.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
       <section id="screen-quiz" class="screen hidden" aria-label="Test en curso"></section>
       <section id="screen-results" class="screen hidden" aria-label="Resultados"></section>
     </main>

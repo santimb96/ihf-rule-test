@@ -1,5 +1,20 @@
 /* Custom layer on top of Tailwind: theme surfaces, motion and small components. */
 
+/* Reserve the first viewport for the app shell. The setup cards (topic filter,
+   length picker, CTA) are injected by JS below the static hero; without this
+   reservation the footer sat at the bottom of the first screen and then jumped
+   down when the cards arrived (CLS 0.55 on the footer). `svh` keeps the
+   reservation honest on mobile browsers with collapsing chrome. */
+#main {
+  min-height: 100vh;
+}
+
+@supports (min-height: 100svh) {
+  #main {
+    min-height: 100svh;
+  }
+}
+
 /* Sticky-footer shell. On mobile browsers `100vh` resolves to the large
    viewport (browser chrome hidden), so a 100vh page overflows the visible
    area and the footer ends up behind the URL bar. `svh` measures the
@@ -109,6 +124,19 @@ html.dark .size-active .text-slate-500 {
 /* --- screens ------------------------------------------------------------ */
 
 .screen {
+  animation: fade-up 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The setup screen owns the first paint: animating its opacity from 0 makes
+   Chrome skip the hero (and its screenshot) as a Largest Contentful Paint
+   candidate, so Lighthouse ends up measuring a header line instead. The fade is
+   kept for the transitions *into* the setup screen; render.js adds .screen-enter
+   only when a screen is swapped in after an interaction. */
+#screen-setup {
+  animation: none;
+}
+
+#screen-setup.screen-enter {
   animation: fade-up 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 

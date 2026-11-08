@@ -2,19 +2,66 @@
  * Read-only access to the generated dataset plus the parsing of the answer
  * catalogue's "Rules reference" field into human readable hint chips, each
  * deep-linked to the right page of the Rules of Game PDF.
+ *
+ * Two layers on purpose: the metadata (labels, per-topic counts) ships in the
+ * entry bundle through virtual:ihf-catalogue-meta, and the 330 KB question
+ * dataset is a separate chunk fetched by load() on the first "Comenzar test".
+ * The tests evaluate data/questions.js directly, so the metadata is derived
+ * from the dataset whenever IHF_META is absent.
  */
 (function (global) {
   "use strict";
 
-  var data = global.IHF_DATA;
-  if (!data) throw new Error("IHF_DATA is not loaded");
+  var metaBundle = global.IHF_META || null;
+  var loading = null;
+
+  function dataset() {
+    return global.IHF_DATA || null;
+  }
+
+  function countTopics(data) {
+    var counts = {};
+    data.topics.forEach(function (topic) {
+      counts[topic.id] = 0;
+    });
+    data.questions.forEach(function (question) {
+      counts[question.topic] = (counts[question.topic] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function ensureMeta() {
+    if (!metaBundle) {
+      var data = dataset();
+      if (!data) throw new Error("IHF_META is not loaded");
+      metaBundle = { meta: data.meta, topics: data.topics, counts: countTopics(data) };
+    }
+    return metaBundle;
+  }
+
+  function requireDataset(what) {
+    var data = dataset();
+    if (!data) throw new Error("question dataset not loaded; call IHFData.load() before " + what);
+    return data;
+  }
+
+  /** Fetches the question dataset once; the promise is cached and retried on failure. */
+  function load() {
+    if (dataset()) return Promise.resolve(dataset());
+    if (!loading) {
+      loading = import("../data/questions.js")
+        .then(function () {
+          return requireDataset("starting the test");
+        })
+        .catch(function (error) {
+          loading = null;
+          throw error;
+        });
+    }
+    return loading;
+  }
 
   var RULES_PDF = "documents/Reglas de Juego (Septiembre 2025) Web.pdf";
-
-  var TOPIC_PAGE = {};
-  data.topics.forEach(function (topic) {
-    TOPIC_PAGE[topic.id] = topic.rulesPage;
-  });
 
   // Chapter starts inside the Rules of Game PDF for references that are not
   // plain rule paragraphs (Aclaraciones = II, Zona de cambios = III, Directrices = IV).
@@ -78,15 +125,23 @@
     return translate(s) || s;
   }
 
+  function topicPage(id) {
+    var topics = ensureMeta().topics;
+    for (var i = 0; i < topics.length; i++) {
+      if (topics[i].id === id) return topics[i].rulesPage;
+    }
+    return undefined;
+  }
+
   function pageFor(segment, question) {
     var m = segment.match(/^(\d{1,2})[:.]/);
-    if (m && TOPIC_PAGE[m[1]]) return TOPIC_PAGE[m[1]];
+    if (m && topicPage(m[1])) return topicPage(m[1]);
     for (var i = 0; i < SPECIAL_PAGES.length; i++) {
       if (SPECIAL_PAGES[i].test.test(segment)) return SPECIAL_PAGES[i].page;
     }
     // Standalone regulations (video replay, team time-out...) are not in the rules PDF.
     if (/regulations/i.test(segment) && !/substitution area/i.test(segment)) return null;
-    return TOPIC_PAGE[question.topic] || null;
+    return topicPage(question.topic) || null;
   }
 
   function chips(question) {
@@ -111,25 +166,37 @@
   }
 
   var api = {
-    meta: data.meta,
+    meta: ensureMeta().meta,
     topics: function () {
-      return data.topics;
+      return ensureMeta().topics;
     },
     questions: function () {
-      return data.questions;
+      return requireDataset("reading the questions").questions;
     },
     topicLabel: function (id) {
-      var found = data.topics.filter(function (t) {
+      var found = ensureMeta().topics.filter(function (t) {
         return t.id === id;
       })[0];
       return found ? found.label : id;
     },
+    /** Number of questions a topic selection would draw from, without the dataset. */
+    poolSize: function (topicIds) {
+      var counts = ensureMeta().counts;
+      return topicIds.reduce(function (sum, id) {
+        return sum + (counts[id] || 0);
+      }, 0);
+    },
     pool: function (topicIds) {
+      var data = requireDataset("building the test");
       var wanted = new Set(topicIds);
       return data.questions.filter(function (q) {
         return wanted.has(q.topic);
       });
     },
+    loaded: function () {
+      return !!dataset();
+    },
+    load: load,
     chips: chips,
     rulesUrl: rulesUrl,
   };

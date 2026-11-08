@@ -29,9 +29,11 @@ Managed with pnpm; the browser never talks to a CDN:
   (moved verbatim from the former inline config in `index.html`). Tailwind v4 is
   deliberately not adopted: it changes default border/ring semantics and would
   be a separate visual migration.
-- `@fontsource-variable/inter`, `@fontsource-variable/sora` — self-hosted
+- `@fontsource-variable/inter`, `@fontsource-variable/archivo` — self-hosted
   variable fonts (all subsets), emitted as cacheable `.woff2` assets. Replaces
-  the Google Fonts stylesheet.
+  the Google Fonts stylesheet. Archivo is imported from its `wght` subset: the
+  design never uses the width axis, and `standard` (wdth+wght) is 90 KB for
+  latin where `wght` is 35 KB.
 - `jspdf` 2.5.2 — lazy-loaded with a dynamic `import()` on the first PDF
   download, so its ~342 kB stays out of the initial payload.
 
@@ -43,27 +45,31 @@ pnpm add -D tailwindcss@3.4.16 vite  # build tooling
 ## Structure
 
 ```
-index.html          app shell and screen containers
+index.html          app shell, static hero (LCP image) and screen containers
 tailwind.config.js  theme (colors, fonts, motion) moved from the inline config
 postcss.config.js   tailwindcss + autoprefixer
-vite.config.js      build config (copies documents/ into dist/)
+vite.config.js      build config (copies documents/ into dist/, font preloads, catalogue meta)
 styles/
   main.css          build entry: fontsource imports + @tailwind layers
   styles.css        custom CSS layer loaded after main.css (overrides utilities)
 scripts/
-  app.js            bundler entry: imports the IIFEs in dependency order
+  app.js            bundler entry: imports the first-paint IIFEs in dependency order
+  lazy/             chunks fetched on demand (quiz, results, stats, PDF viewer)
+  catalogue-meta.js publishes meta/topics/counts from virtual:ihf-catalogue-meta
   scoring.js        75% pass rule over the test's possible answers + question status
   quiz.js           attempt builder (shuffle, answers, report)
   stats.js          per-browser attempt history + aggregations (no DOM)
-  data.js           dataset access + guidelines parsing for hints
+  data.js           metadata access + IHFData.load() for the questions + hint parsing
   hint.js           shared collapsible hint component
   dialog.js         shared modal shell: focus trap, Escape, scroll lock
   pdf-modal.js      in-app PDF viewer for rule and document links
   render.js         DOM helpers, screen switching, icons, toast
   screens/          setup / quiz / results / stats screens
   pdf.js            jsPDF report (header, summary, accepted + failed sections)
-  main.js           lifecycle wiring (jsPDF fetched on demand)
-data/questions.js   generated dataset (do not edit by hand)
+  main.js           lifecycle wiring (lazy screens, jsPDF fetched on demand)
+data/questions.js   generated dataset (do not edit by hand); fetched on the first
+                    "Comenzar test", never in the entry bundle
+data/rules.js       extracted rules text: read by tests/tools only, not shipped
 tools/extract_catalog.py   regenerates the dataset from the PDFs
 tests/              node:test suite
 odd/tasks/          feature document (specs, tasks, log)

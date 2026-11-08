@@ -11,27 +11,40 @@
   var Screens = global.IHFScreens;
 
   var state = { config: null, quiz: null, report: null, startTime: null, elapsedTime: 0 };
+  var starting = false;
+
+  // Screen chunks: the first paint only pays for the setup screen, so the quiz,
+  // the results, the statistics dialog and the PDF pipeline are fetched on the
+  // first click that needs them. Each load is cached; a failure is retried by
+  // the next click instead of leaving a rejected promise cached forever.
+  var CHUNKS = {
+    quiz: function () {
+      return import("./lazy/quiz-flow.js");
+    },
+    results: function () {
+      return import("./lazy/results-flow.js");
+    },
+    stats: function () {
+      return import("./lazy/stats-flow.js");
+    },
+    pdfViewer: function () {
+      return import("./lazy/pdf-viewer.js");
+    },
+  };
+  var chunkLoads = {};
+
+  function loadChunk(name) {
+    if (!chunkLoads[name]) {
+      chunkLoads[name] = CHUNKS[name]().catch(function (error) {
+        delete chunkLoads[name];
+        throw error;
+      });
+    }
+    return chunkLoads[name];
+  }
 
   function screenNode(id) {
     return document.getElementById(id);
-  }
-
-  function renderHeaderStats() {
-    var host = document.getElementById("header-stats");
-    if (!host) return;
-    [
-      D.meta.questionCount + " preguntas",
-      D.topics().length + " temas",
-      "Aprobado ≥ 75%",
-    ].forEach(function (text) {
-      R.append(
-        host,
-        R.el("span", {
-          class: "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300",
-          text: text,
-        }),
-      );
-    });
   }
 
   // The progress entry point lives in the header: it is global to the three
@@ -59,12 +72,18 @@
           "inline-flex h-11 items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand-300 hover:bg-slate-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 dark:hover:text-white",
         on: {
           click: function () {
-            if (!Screens.stats) return;
-            Screens.stats.open({
-              onCleared: function () {
-                if (button.parentNode) button.parentNode.removeChild(button);
-              },
-            });
+            loadChunk("stats")
+              .then(function () {
+                if (!Screens.stats) return;
+                Screens.stats.open({
+                  onCleared: function () {
+                    if (button.parentNode) button.parentNode.removeChild(button);
+                  },
+                });
+              })
+              .catch(function () {
+                R.toast("No se pudieron cargar las estadísticas. Vuelve a intentarlo.");
+              });
           },
         },
         kids: [
@@ -88,27 +107,45 @@
   }
 
   function startQuiz(config) {
-    launchQuiz(D.pool(config.topics), config.size, Stats ? Stats.MODES.full : "full");
+    // The question dataset is a separate chunk: fetch it before the attempt can
+    // be built, so the first paint never pays for the 330 KB catalogue.
+    D.load()
+      .then(function () {
+        launchQuiz(D.pool(config.topics), config.size, Stats ? Stats.MODES.full : "full");
+      })
+      .catch(function () {
+        R.toast("No se pudo cargar el catálogo de preguntas. Revisa tu conexión y vuelve a intentarlo.");
+      });
   }
 
   // One mount for both paths (a fresh test and the retry of the misses) so the
   // attempt is recorded in a single place and the two cannot drift apart.
   function launchQuiz(pool, size, mode) {
-    state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: size });
-    state.startTime = Date.now();
-    state.elapsedTime = 0;
-    R.showScreen("screen-quiz");
-    Screens.quiz.mount(screenNode("screen-quiz"), {
-      quiz: state.quiz,
-      onFinish: function (report) {
-        state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
-        report.elapsedTime = state.elapsedTime;
-        state.report = report;
-        recordAttempt(report, mode);
-        showResults();
-      },
-      onExit: showSetup,
-    });
+    if (starting) return;
+    starting = true;
+    loadChunk("quiz")
+      .then(function () {
+        starting = false;
+        state.quiz = global.IHFQuiz.createQuiz({ pool: pool, size: size });
+        state.startTime = Date.now();
+        state.elapsedTime = 0;
+        R.showScreen("screen-quiz");
+        Screens.quiz.mount(screenNode("screen-quiz"), {
+          quiz: state.quiz,
+          onFinish: function (report) {
+            state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000);
+            report.elapsedTime = state.elapsedTime;
+            state.report = report;
+            recordAttempt(report, mode);
+            showResults();
+          },
+          onExit: showSetup,
+        });
+      })
+      .catch(function () {
+        starting = false;
+        R.toast("No se pudo cargar el test. Revisa tu conexión y vuelve a intentarlo.");
+      });
   }
 
   function recordAttempt(report, mode) {
@@ -118,45 +155,51 @@
 
   function showResults() {
     renderHeaderStatsButton();
-    R.showScreen("screen-results");
-    Screens.results.mount(screenNode("screen-results"), {
-      report: state.report,
-      config: state.config,
-      onDownload: function (done) {
-        var finish = done || function () {};
-        // jsPDF (366 KB) is fetched on demand so it stays out of the initial
-        // payload; the namespace exposes the same `jsPDF` named export the
-        // UMD global did, so pdf.js needs no change.
-        import("jspdf")
-          .then(function (mod) {
-            global.jspdf = mod;
-            return global.IHFPdf.generate(state.report, state.config);
-          })
-          .then(function (name) {
-            if (name) R.toast("PDF generado: " + name);
-            finish();
-          })
-          .catch(function () {
-            R.toast("No se pudo generar el PDF. Vuelve a intentarlo.");
-            finish();
-          });
-      },
-      onRetry: function () {
-        startQuiz(state.config);
-      },
-      onRetryFailed: function () {
-        var failedQuestions = state.report.results
-          .filter(function (r) { return !r.correct; })
-          .map(function (r) { return r.question; });
+    loadChunk("results")
+      .then(function () {
+        R.showScreen("screen-results");
+        Screens.results.mount(screenNode("screen-results"), {
+          report: state.report,
+          config: state.config,
+          onDownload: function (done) {
+            var finish = done || function () {};
+            // jsPDF (366 KB) is fetched on demand so it stays out of the initial
+            // payload; the namespace exposes the same `jsPDF` named export the
+            // UMD global did, so pdf.js needs no change.
+            import("jspdf")
+              .then(function (mod) {
+                global.jspdf = mod;
+                return global.IHFPdf.generate(state.report, state.config);
+              })
+              .then(function (name) {
+                if (name) R.toast("PDF generado: " + name);
+                finish();
+              })
+              .catch(function () {
+                R.toast("No se pudo generar el PDF. Vuelve a intentarlo.");
+                finish();
+              });
+          },
+          onRetry: function () {
+            startQuiz(state.config);
+          },
+          onRetryFailed: function () {
+            var failedQuestions = state.report.results
+              .filter(function (r) { return !r.correct; })
+              .map(function (r) { return r.question; });
 
-        var customPool = failedQuestions;
-        var customSize = Math.min(state.config.size, customPool.length);
+            var customPool = failedQuestions;
+            var customSize = Math.min(state.config.size, customPool.length);
 
-        state.config = Object.assign({}, state.config, { size: customSize });
-        launchQuiz(customPool, customSize, Stats ? Stats.MODES.retry : "retry");
-      },
-      onNew: showSetup,
-    });
+            state.config = Object.assign({}, state.config, { size: customSize });
+            launchQuiz(customPool, customSize, Stats ? Stats.MODES.retry : "retry");
+          },
+          onNew: showSetup,
+        });
+      })
+      .catch(function () {
+        R.toast("No se pudieron cargar los resultados. Revisa tu conexión y vuelve a intentarlo.");
+      });
   }
 
   function renderFatal(message) {
@@ -184,14 +227,22 @@
       // Inside a dialog (the viewer's own "Abrir en pestaña") the browser wins.
       if (link.closest('[role="dialog"]')) return;
       var href = link.getAttribute("href") || "";
-      if (!/\.pdf(?:[?#]|$)/i.test(href) || !global.IHFPdfModal) return;
+      if (!/\.pdf(?:[?#]|$)/i.test(href)) return;
       event.preventDefault();
-      global.IHFPdfModal.open({ url: href, title: link.textContent.trim() });
+      loadChunk("pdfViewer")
+        .then(function () {
+          global.IHFPdfModal.open({ url: href, title: link.textContent.trim() });
+        })
+        .catch(function () {
+          // The viewer never arrived (offline, blocked chunk): fall back to the
+          // plain navigation the link always had.
+          global.location.href = href;
+        });
     });
   }
 
   function boot() {
-    if (!global.IHFData || !global.IHFScreens || !global.IHFQuiz) {
+    if (!global.IHFData || !global.IHFScreens || !global.IHFScreens.setup || !global.IHFQuiz) {
       renderFatal("Falta data/questions.js o algún módulo de scripts/. Recarga la página.");
       return;
     }

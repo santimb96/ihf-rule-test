@@ -13,17 +13,24 @@
     "flag", "download", "refresh", "grid", "close", "doc", "clock", "chart", "github", "issue"
   ];
 
-  ICON_NAMES.forEach(function (name) {
-    iconPromises[name] = fetch("./assets/icons/" + name + ".svg")
-      .then(function (res) { return res.text(); })
-      .then(function (svg) {
-        ICONS[name] = svg;
-        return svg;
-      })
-      .catch(function () {
-        ICONS[name] = "";
-      });
-  });
+  // Fetched on first use: asking for all 17 at parse time put 17 high-priority
+  // requests in front of the LCP resources. A screen only draws a handful.
+  function loadIcon(name) {
+    if (ICON_NAMES.indexOf(name) === -1) return Promise.resolve("");
+    if (!iconPromises[name]) {
+      iconPromises[name] = fetch("./assets/icons/" + name + ".svg")
+        .then(function (res) { return res.text(); })
+        .then(function (svg) {
+          ICONS[name] = svg;
+          return svg;
+        })
+        .catch(function () {
+          ICONS[name] = "";
+          return "";
+        });
+    }
+    return iconPromises[name];
+  }
 
   function append(node, child) {
     if (child == null || child === false) return;
@@ -80,11 +87,16 @@
   }
 
   function showScreen(id) {
+    var target = document.getElementById(id);
+    var wasHidden = target.classList.contains("hidden");
     document.querySelectorAll(".screen").forEach(function (screen) {
       screen.classList.add("hidden");
     });
-    var target = document.getElementById(id);
     target.classList.remove("hidden");
+    // Only swapped-in screens animate: the setup screen ships visible, and an
+    // entry animation there paints the hero at opacity 0 on first load, which
+    // costs the LCP candidate (see styles.css).
+    if (wasHidden) target.classList.add("screen-enter");
     target.style.animation = "none";
     void target.offsetHeight;
     target.style.animation = "";
@@ -106,8 +118,8 @@
     var span = el("span", { class: className || "h-5 w-5" });
     if (ICONS[name]) {
       span.innerHTML = ICONS[name];
-    } else if (iconPromises[name]) {
-      iconPromises[name].then(function (svg) {
+    } else {
+      loadIcon(name).then(function (svg) {
         span.innerHTML = svg;
       });
     }
