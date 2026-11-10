@@ -340,6 +340,14 @@ export const mount = (node, options) => {
         kids: [icon('issue', 'h-4 w-4 shrink-0'), 'Abrir una issue'],
       }),
     ),
+    el('a', {
+      href: 'https://ko-fi.com/smartinezdev',
+      target: '_blank',
+      rel: 'noopener',
+      'aria-label': 'Apoyar el proyecto con una donación en Ko-fi',
+      class: 'donate-btn donate-btn--lg coffee-link mt-5',
+      kids: [icon('coffee', 'donate-btn__icon'), 'Invítame a un café'],
+    }),
   )
 
   // The hero stays attached: detaching it (even to append it back in the same

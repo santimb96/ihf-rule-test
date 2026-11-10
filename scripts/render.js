@@ -4,12 +4,13 @@ const iconPromises = {}
 const ICON_NAMES = [
   'check', 'alert', 'dash', 'x', 'bulb', 'left', 'right',
   'flag', 'download', 'refresh', 'grid', 'close', 'doc', 'clock', 'chart', 'github', 'issue',
+  'coffee',
 ]
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const SVG_TAGS = new Set(['svg', 'circle', 'path', 'rect', 'line', 'g', 'ellipse', 'polyline', 'polygon'])
 
-// Fetched on first use: asking for all 17 at parse time put 17 high-priority
+// Fetched on first use: asking for all 18 at parse time put 18 high-priority
 // requests in front of the LCP resources. A screen only draws a handful.
 const loadIcon = (name) => {
   if (!ICON_NAMES.includes(name)) return Promise.resolve('')
