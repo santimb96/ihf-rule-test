@@ -1,5 +1,9 @@
 # Catálogo IHF · Test de reglas de juego
 
+<p align="center">
+  <img src="assets/promo/presentacion-horizontal.jpg" width="100%" alt="Banner de Catálogo IHF: «Prepara tu test de reglas de juego», con la pantalla de resultados de un test aprobado en escritorio y un test en curso en el móvil">
+</p>
+
 Aplicación web de estudio para preparar los catálogos oficiales de preguntas de
 las Reglas de Juego de la IHF. Eliges los temas y la duración del test,
 respondes, consultas en cada pregunta la directriz del reglamento en la que se
@@ -9,15 +13,6 @@ basa esa respuesta, ves si apruebas (75 % o más) y descargas un informe en PDF.
 
 No hay nada que instalar: es un sitio estático que funciona entero en el
 navegador y cada intento se queda en tu dispositivo.
-
-## Presentación
-
-<p align="center">
-  <img src="assets/promo/presentacion-horizontal.jpg" width="100%" alt="Banner de Catálogo IHF: «Prepara tu test de reglas de juego», con la pantalla de resultados de un test aprobado en escritorio y un test en curso en el móvil">
-</p>
-
-El banner está en `assets/promo/` (1200 × 627) y lleva capturas reales de la
-aplicación.
 
 ## Qué es
 
