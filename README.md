@@ -1,108 +1,147 @@
-# Catálogo IHF - Test reglas de juego
+# Catálogo IHF · Test de reglas de juego
 
-Web study app built on the official IHF question catalogues in `documents/`:
-pick topics, pick a length (5/10/20/30), answer, check the cited guidelines
-through per-question hints, see pass/fail at **>= 75%**, track your progress in
-the browser and export a styled PDF report.
+Aplicación web de estudio para preparar los catálogos oficiales de preguntas de
+las Reglas de Juego de la IHF. Eliges los temas y la duración del test,
+respondes, consultas en cada pregunta la directriz del reglamento en la que se
+basa esa respuesta, ves si apruebas (75 % o más) y descargas un informe en PDF.
 
-**Use it at <https://catalogoihf.netlify.app/>.** Nothing to
-install: it is a static site that runs entirely in the browser, and every
-attempt stays on the device.
+**En marcha: <https://catalogoihf.netlify.app/>**
 
-## How to use
+No hay nada que instalar: es un sitio estático que funciona entero en el
+navegador y cada intento se queda en tu dispositivo.
 
-1. Pick the topics and the test length (5, 10, 20 or 30 questions).
-2. Answer each question; the hint button shows the guidelines the catalogue
-   cites for that answer.
-3. Finish to see the score, the pass state (>= 75% of the possible answers) and
-   a per-question review.
-4. Download the report as a styled PDF, retry the missed questions, or start a
-   new test.
-5. Open **Estadísticas** in the header to review the history kept on this device.
+## Qué es
 
-## Structure
+Una herramienta de práctica para árbitros, formadores y opositores: convierte
+los catálogos de preguntas de la IHF en tests interactivos con corrección
+inmediata, acceso al reglamento y seguimiento del progreso. No hay cuentas, ni
+servidores, ni envío de datos: el catálogo, el motor de corrección y las
+estadísticas viajan con la web y viven en el navegador.
+
+## Qué ofrece
+
+- **432 preguntas** repartidas en **19 bloques temáticos**, desde el terreno de
+  juego hasta las sanciones disciplinarias, pasando por el portero, el golpe
+  franco, los 7 metros o la zona de cambios.
+- **Tests a medida**: eliges los temas y la duración (5, 10, 20 o 30 preguntas)
+  y cada intento se genera barajando el banco.
+- **Corrección por respuesta**: cada opción correcta suma, una sola opción
+  errónea anula la pregunta y la selección parcial de aciertos cuenta.
+- **Pistas con el reglamento**: en cada pregunta puedes abrir las directrices
+  que cita el catálogo, enlazadas a la página del PDF de las Reglas de Juego
+  cuando la referencia corresponde a un capítulo conocido.
+- **Nota y aprobado**: puntuación sobre el total de respuestas posibles, con el
+  corte en el 75 % y dos decimales.
+- **Repaso de fallos**: al terminar puedes repetir solo las preguntas falladas.
+- **Estadísticas locales**: histórico por navegador con la mezcla de respuestas,
+  la regla más y menos acertada y la evolución reciente.
+- **Informe en PDF**: descarga un resumen con cabecera, totales y el detalle de
+  aciertos y fallos, con estilos propios.
+- **Todo en el dispositivo**: sin registro, sin cookies de terceros y con
+  exportación del histórico en JSON antes de borrarlo.
+
+## Cómo se usa
+
+1. Elige los temas y la duración del test (5, 10, 20 o 30 preguntas).
+2. Responde cada pregunta; el botón de pista muestra las directrices que el
+   catálogo cita para esa respuesta.
+3. Al terminar verás la puntuación, si apruebas (>= 75 % de las respuestas
+   posibles) y la revisión pregunta a pregunta.
+4. Descarga el informe en PDF, repite los fallos o empieza un test nuevo.
+5. Abre **Estadísticas** en la cabecera para consultar el histórico guardado en
+   este dispositivo.
+
+## Cómo se puntúa
+
+- La nota se calcula sobre el **número de respuestas posibles** del test, no
+  sobre el número de preguntas: un test de 5 preguntas cuyas preguntas suman 9
+  respuestas correctas se puntúa sobre 9 (`5/6 → 83,33 %`).
+- Cada pregunta suma un punto por cada opción correcta marcada y cero si se
+  marca alguna opción errónea; la selección parcial de aciertos sigue contando.
+- Aprobado: `puntuación / respuestas posibles >= 0,75` (5/6, 7/9, 15/20),
+  mostrado con dos decimales.
+
+## Estadísticas en el dispositivo
+
+Cada intento terminado se guarda en `localStorage` bajo `ihf.stats.v1`, por
+navegador y por dispositivo: nada sale del navegador. De cada intento se
+conservan la fecha, el porcentaje, la puntuación, el aprobado, la duración, el
+tiempo empleado y una entrada por pregunta con su clasificación (acertada /
+parcial / fallada / sin responder) y los puntos obtenidos.
+
+- El botón **Estadísticas** aparece en la cabecera solo cuando este navegador
+  tiene al menos un intento: es global para las tres pantallas y queda fuera de
+  la zona de decisión de «Comenzar test». El diálogo compara la mitad reciente
+  del histórico con la anterior, muestra la mezcla de respuestas, la regla más
+  practicada (regla principal de `question.rules`) y la más floja en cuanto hay
+  al menos 3 preguntas.
+- Los intentos de «Repetir los fallos» se marcan como `retry`: cuentan para la
+  práctica y para la precisión por regla, pero quedan fuera de la tendencia para
+  que repetir fallos no haga parecer que empeoras.
+- El histórico guarda los 200 intentos más recientes. Exporta el JSON antes de
+  borrar; el diálogo también ofrece un borrado en dos pasos.
+- Un almacenamiento corrupto, de otra versión o bloqueado (modo privado, cuota)
+  degrada a un histórico vacío en lugar de romper la aplicación.
+
+## Stack
+
+Todo viaja con el sitio; en tiempo de ejecución no se carga nada desde una CDN.
+
+- **Tailwind CSS 3.4.16** (en compilación) — utilidades compiladas y purgadas
+  por Vite + PostCSS desde `styles/main.css`; el tema vive en
+  `tailwind.config.js`. Tailwind v4 no se adopta a propósito: cambia la
+  semántica por defecto de bordes y anillos y sería una migración visual aparte.
+- **Fuentes variables Inter y Archivo** — subconjuntos `.woff2` autoalojados y
+  servidos como recursos cacheables. Archivo se importa desde su subconjunto
+  `wght`: el diseño no usa el eje de anchura y `standard` (wdth+wght) pesa 90 KB
+  en latín frente a los 35 KB de `wght`.
+- **jsPDF** — se carga con un `import()` dinámico en la primera descarga de PDF,
+  así que sus ~342 kB quedan fuera de la carga inicial.
+
+## Estructura
 
 ```
-index.html          app shell, static hero (LCP image) and screen containers
-tailwind.config.js  theme (colors, fonts, motion) moved from the inline config
-postcss.config.js   tailwindcss + autoprefixer
-vite.config.js      build config (copies documents/ into dist/, font preloads, catalogue meta)
-styles/
-  main.css          build entry: fontsource imports + @tailwind layers
-  styles.css        custom CSS layer loaded after main.css (overrides utilities)
+index.html          shell de la aplicación, hero estático (imagen LCP) y contenedores de pantalla
+tailwind.config.js  tema (colores, tipografías, movimiento)
+vite.config.js      configuración de build (copia documents/ a dist/, precarga de fuentes, metadatos del catálogo)
+styles/             entrada de build y capa de CSS propio (se carga después de las utilidades)
 scripts/
-  app.js            bundler entry: catalogue metadata + main.js
-  catalogue-meta.js configures data.js with meta/topics/counts from virtual:ihf-catalogue-meta
-  scoring.js        75% pass rule over the test's possible answers + question status
-  quiz.js           attempt builder (shuffle, answers, report)
-  stats.js          per-browser attempt history + aggregations (no DOM)
-  data.js           metadata access + load() for the questions + hint parsing
-  hint.js           shared collapsible hint component
-  dialog.js         shared modal shell: focus trap, Escape, scroll lock
-  pdf-modal.js      in-app PDF viewer for rule and document links
-  render.js         DOM helpers, screen switching, icons, toast
-  screens/          setup / quiz / results / stats screens (each its own chunk)
-  pdf.js            jsPDF report (header, summary, accepted + failed sections)
-  main.js           lifecycle wiring: imports screens on demand, jsPDF fetched on demand
-data/questions.js   generated dataset (do not edit by hand); fetched on the first
-                    "Comenzar test", never in the entry bundle
-data/rules.js       extracted rules text: read by the tests, not shipped today
-tools/extract_catalog.py   regenerates the dataset from the PDFs
-tests/              node:test suite
+  app.js            entrada del bundler: metadatos del catálogo + main.js
+  scoring.js        regla del 75 % sobre las respuestas posibles y estado de cada pregunta
+  quiz.js           generador de intentos (barajado, respuestas, informe)
+  stats.js          histórico por navegador y agregaciones (sin DOM)
+  data.js           acceso a metadatos y load() de las preguntas, más el análisis de pistas
+  hint.js           componente compartido de pista desplegable
+  dialog.js         shell de modales: trampa de foco, Escape, bloqueo de scroll
+  pdf-modal.js      visor de PDF dentro de la app para enlaces al reglamento
+  render.js         utilidades de DOM, cambio de pantalla, iconos y avisos
+  screens/          pantallas de configuración / test / resultados / estadísticas (un chunk cada una)
+  pdf.js            informe jsPDF (cabecera, resumen, secciones de aciertos y fallos)
+  main.js           ciclo de vida: importa las pantallas bajo demanda y pide jsPDF al vuelo
+data/questions.js   conjunto de datos generado (no editar a mano); se pide en el primer «Comenzar test»
+data/rules.js       texto de las reglas extraído: lo leen los tests, hoy no se publica
+tools/extract_catalog.py   regenera el conjunto de datos a partir de los PDF
+tests/              suite de node:test
+```
+
+## Desarrollo
+
+```
+pnpm install
+pnpm dev      # servidor de desarrollo
+pnpm build    # build de producción en dist/
+pnpm test     # suite de node:test
+pnpm lint
 ```
 
 ## Tests
 
-The suite covers dataset integrity, the 75%-of-answers pass rule, per-answer
-grading, the shared question classification, the quiz engine, the local
-statistics store and the resolution of hint citations to the rules text.
+La suite cubre la integridad del conjunto de datos, la regla del 75 % sobre las
+respuestas posibles, la corrección por respuesta, la clasificación compartida de
+preguntas, el motor de test, el almacén de estadísticas local y la resolución de
+las citas de las pistas al texto de las reglas.
 
-## Local statistics
+## Aviso
 
-Every finished attempt is stored in `localStorage` under `ihf.stats.v1`, per
-browser and per device — nothing leaves the browser. Each record keeps the
-timestamp, percentage, score, pass state, length, elapsed time and one entry per
-question with its classification (acertada / parcial / fallada / sin responder)
-and the points earned.
-
-- The header shows **Estadísticas** only when this browser holds at least one
-  attempt: the button is global to the three screens and stays out of the
-  "Comenzar test" decision area. The dialog compares the recent half of the
-  history against the previous half, shows the answer mix, the most practiced
-  rule (primary rule from `question.rules`) and the weakest one once it has at
-  least 3 questions.
-- "Repetir los fallos" attempts are tagged `retry`: they count for practice and
-  rule accuracy, but are excluded from the trend so re-running missed questions
-  cannot make progress look worse.
-- The history keeps the newest 200 attempts. Export it as JSON before clearing;
-  the dialog also offers a two-step delete.
-- Corrupt, foreign-version or blocked storage (private mode, quota) degrades to
-  an empty history instead of breaking the app.
-
-## Stack
-
-Everything ships with the site; nothing loads from a CDN at runtime.
-
-- **Tailwind CSS 3.4.16** (build-time) — utilities compiled and purged by Vite +
-  PostCSS from `styles/main.css`; the theme lives in `tailwind.config.js`,
-  moved verbatim from the former inline config in `index.html`. Tailwind v4 is
-  deliberately not adopted: it changes default border/ring semantics and would
-  be a separate visual migration.
-- **Inter and Archivo variable fonts** — self-hosted `.woff2` subsets, emitted
-  as cacheable assets. Archivo is imported from its `wght` subset: the design
-  never uses the width axis, and `standard` (wdth+wght) is 90 KB for latin where
-  `wght` is 35 KB.
-- **jsPDF** — loaded with a dynamic `import()` on the first PDF download, so its
-  ~342 kB stays out of the initial payload.
-
-## Rules
-
-- The score is counted over the number of possible answers in the test, not
-  over the number of questions: a 5-question test whose questions hold 9
-  correct answers is scored out of 9 (`5/6 -> 83.33%`).
-- A question earns one point per correct option selected and zero when any wrong
-  option is selected; a partial selection of correct options still counts.
-- Pass mark: `score / totalAnswers >= 0.75` (5/6, 7/9, 15/20), shown with two
-  decimals.
-- Hints show the guidelines cited by the answer catalogue, deep-linked into the
-  Rules of Game PDF when the reference resolves to a known chapter.
+Los catálogos de preguntas y las Reglas de Juego son de la IHF. Esta aplicación
+es una herramienta personal de estudio, sin vinculación con la federación.
