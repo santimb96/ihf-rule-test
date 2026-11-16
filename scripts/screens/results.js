@@ -160,7 +160,8 @@ export const mount = (node, options) => {
   const negative = report.score < 0
   const wrongPicks = report.wrongPicks || 0
   const statusCount = (status) => report.results.filter((result) => result.status === status).length
-  const failedCount = report.results.filter((result) => !result.correct).length
+  // One vocabulary for "did not ace it": the shared status, not a second rule.
+  const failedCount = report.total - statusCount(STATUS.correct)
   // A failed attempt opens on its misses: reviewing them is the study moment.
   let filter = 'all'
   if (!report.passed) {
@@ -290,16 +291,20 @@ export const mount = (node, options) => {
     },
   )
 
-  const retryButton = el(
-    'button',
-    {
-      type: 'button',
-      class: SECONDARY_CLASS,
-      'data-action': 'retry',
-      on: { click: onRetry },
-      kids: [icon('refresh', 'h-4 w-4'), 'Repetir test'],
-    },
-  )
+  // An exam is a one-shot attempt: no repeating it, in whole or in parts.
+  const retryButton =
+    config.mode === 'exam'
+      ? null
+      : el(
+        'button',
+        {
+          type: 'button',
+          class: SECONDARY_CLASS,
+          'data-action': 'retry',
+          on: { click: onRetry },
+          kids: [icon('refresh', 'h-4 w-4'), 'Repetir test'],
+        },
+      )
 
   const newButton = el(
     'button',
@@ -313,7 +318,7 @@ export const mount = (node, options) => {
   )
 
   let retryFailedButton = null
-  if (failedCount) {
+  if (failedCount && config.mode !== 'exam') {
     retryFailedButton = el('button', {
       type: 'button',
       class: report.passed ? DANGER_CLASS : PRIMARY_CLASS,
@@ -391,6 +396,7 @@ export const mount = (node, options) => {
           'div',
           { class: 'mt-4 flex flex-wrap justify-center gap-2 lg:justify-start' },
           [
+            config.mode === 'exam' ? 'Examen' : null,
             `${config.size} preguntas`,
             topicSummary,
             `mín. ${report.required} puntos`,

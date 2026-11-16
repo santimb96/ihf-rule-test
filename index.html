@@ -44,9 +44,10 @@
   <link rel="icon" type="image/png" href="./assets/icons/non-official-ihf-rule-test-icon.png">
   <!-- The hero screenshot is the LCP element and it lives in the static markup
        below, but a preload still starts the request before the parser reaches
-       it (LCP request discovery audit). Vite hashes both references to the same
-       URL, so the preload and the <img> share one download. -->
-  <link rel="preload" as="image" type="image/webp" href="./assets/screenshots/results-screen.webp" fetchpriority="high">
+       it (LCP request discovery audit). `type="image/avif"` keeps browsers
+       without AVIF from fetching it twice; imagesrcset lets the preload pick
+       the same width the <picture> will. Vite rewrites every URL. -->
+  <link rel="preload" as="image" type="image/avif" imagesrcset="./assets/screenshots/results-screen-540.avif 540w, ./assets/screenshots/results-screen-780.avif 780w, ./assets/screenshots/results-screen-1080.avif 1080w" imagesizes="(min-width: 1024px) 440px, 92vw" fetchpriority="high">
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="styles/styles.css">
   <script type="module" src="./scripts/app.js"></script>
@@ -110,7 +111,10 @@
               </p>
             </div>
             <figure class="shrink-0 lg:w-[440px]">
-              <img src="./assets/screenshots/results-screen.webp" alt="Pantalla de resultados de un test: anillo con el porcentaje de puntos, botones para descargar el informe PDF o repetir el test y revisión pregunta a pregunta" width="1440" height="900" decoding="async" fetchpriority="high" class="w-full border border-white/25 shadow-2xl">
+              <picture class="block">
+                <source type="image/avif" srcset="./assets/screenshots/results-screen-540.avif 540w, ./assets/screenshots/results-screen-780.avif 780w, ./assets/screenshots/results-screen-1080.avif 1080w" sizes="(min-width: 1024px) 440px, 92vw">
+                <img src="./assets/screenshots/results-screen-1080.webp" srcset="./assets/screenshots/results-screen-540.webp 540w, ./assets/screenshots/results-screen-780.webp 780w, ./assets/screenshots/results-screen-1080.webp 1080w" sizes="(min-width: 1024px) 440px, 92vw" alt="Pantalla de resultados de un test: anillo con el porcentaje de puntos, botones para descargar el informe PDF o nuevo test y revisión pregunta a pregunta" width="1080" height="675" decoding="async" fetchpriority="high" class="w-full border border-white/25 shadow-2xl">
+              </picture>
               <figcaption class="mt-2 text-[11px] leading-snug text-white/60">Así se ve el informe al terminar un test.</figcaption>
             </figure>
           </div>

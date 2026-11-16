@@ -273,3 +273,21 @@ test('exportJson writes a versioned, parseable snapshot', () => {
   assert.equal(parsed.attempts.length, 1)
   assert.equal(parsed.attempts[0].pct, 80)
 })
+
+test('an exam attempt keeps its own mode through the history', () => {
+  const report = {
+    total: 2,
+    totalAnswers: 3,
+    score: 2,
+    percentage: 66.67,
+    passed: false,
+    results: [{ question: { id: '1.1', answer: ['a'] }, selected: ['a'], points: 1, status: 'correct' }],
+  }
+  const storage = fakeStorage({})
+
+  assert.equal(Stats.toAttempt(report, 'exam', 1000).mode, 'exam')
+  assert.equal(Stats.toAttempt(report, 'nonsense', 1000).mode, 'full')
+
+  Stats.record(Stats.toAttempt(report, 'exam', 1000), storage)
+  assert.equal(Stats.load(storage).attempts[0].mode, 'exam')
+})

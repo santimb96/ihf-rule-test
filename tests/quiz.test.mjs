@@ -196,3 +196,20 @@ test('wrong picks subtract from the score, so the report can go negative', () =>
   assert.equal(report.passed, false)
   assert.equal(report.correct, 0)
 })
+
+test('a resumed exam keeps its questions, order and answers', () => {
+  const items = [
+    { id: '7.2', topic: '7', text: 'B', options: [{ letter: 'a', text: 'A' }, { letter: 'b', text: 'B' }], answer: ['b'], rules: '7:2' },
+    { id: '7.1', topic: '7', text: 'A', options: [{ letter: 'a', text: 'A' }, { letter: 'b', text: 'B' }], answer: ['a', 'b'], rules: '7:1' }
+  ]
+
+  const quiz = createQuiz({ items, restored: [['b'], ['a']] })
+
+  assert.deepEqual(quiz.items.map((question) => question.id), ['7.2', '7.1'])
+  assert.deepEqual(quiz.selected(0), ['b'])
+  assert.deepEqual(quiz.selected(1), ['a'])
+  assert.equal(quiz.report().score, 2)
+
+  const withoutAnswers = createQuiz({ items })
+  assert.deepEqual(withoutAnswers.selected(0), [])
+})

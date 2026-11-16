@@ -1,23 +1,26 @@
 import { el, icon, append } from '../render.js'
 import { topics, poolSize, getMeta } from '../data.js'
 import { SUPPORTED_LENGTHS } from '../scoring.js'
+import { EXAM, formatClock, remainingSeconds } from '../timer.js'
 
-// Setup screen: topic filter, test length picker and start CTA. The pool size
-// drives which lengths are available and the pass requirement.
+// Setup screen: mode, topic filter, test length picker and start CTA. The pool
+// size drives which lengths are available and the pass requirement.
 
 // Kept across mounts: the hero ships in index.html (see mount()).
 let heroNode = null
 
 export const mount = (node, options) => {
-  const { onStart } = options
+  const { onStart, resume = null, onResume, onDiscardResume } = options
   const allTopics = topics()
   const selected = new Set(allTopics.map((topic) => topic.id))
   let size = 10
+  let mode = 'practice'
 
   const currentPool = () => poolSize(Array.from(selected))
 
   const chipNodes = []
   const sizeNodes = []
+  const modeNodes = []
   let allButton
   let poolLabel
   let poolNote
@@ -25,13 +28,32 @@ export const mount = (node, options) => {
   let topicSummary
   let topicGrid
   let topicToggle
+  let topicsCard
+  let sizesCard
   // On phones the 19-topic catalogue pushes the CTA three screens down: the
   // list starts folded there and the sticky summary carries the action.
   const isCompact = window.matchMedia?.('(max-width: 1023px)').matches ?? false
   let topicsExpanded = !isCompact
 
   const sync = () => {
-    const available = currentPool()
+    const exam = mode === 'exam'
+    // An exam draws from the whole catalogue, so the practice selection must not
+    // gate it: the picker that would fix a short selection is hidden right now.
+    const available = exam ? poolSize(allTopics.map((topic) => topic.id)) : currentPool()
+
+    modeNodes.forEach((entry) => {
+      const on = entry.key === mode
+      if (entry.on === on) return
+      entry.on = on
+      entry.button.setAttribute('aria-checked', String(on))
+      entry.button.tabIndex = on ? 0 : -1
+      entry.button.className = modeButtonClass(on)
+      entry.mark.className = modeMarkClass(on)
+      entry.tile.className = modeTileClass(on)
+      entry.check.style.opacity = on ? '1' : '0'
+    })
+    if (topicsCard) topicsCard.classList.toggle('hidden', exam)
+    if (sizesCard) sizesCard.classList.toggle('hidden', exam)
 
     chipNodes.forEach((entry) => {
       const on = selected.has(entry.id)
@@ -89,12 +111,167 @@ export const mount = (node, options) => {
     const shortPool = available < 5
     const note = shortPool
       ? 'Necesitas al menos 5 preguntas: selecciona más temas.'
-      : `Aprobado con ≥75% de los puntos · ${size} preguntas`
+      : exam
+        ? `Examen: ${Math.min(EXAM.size, available)} preguntas · ${EXAM.seconds / 60} minutos · sin pistas`
+        : `Aprobado con ≥75% de los puntos · ${size} preguntas`
     const noteClass = shortPool ? 'text-xs font-medium text-rose-700' : 'text-xs text-slate-500'
     if (poolNote.textContent !== note) poolNote.textContent = note
     if (poolNote.className !== noteClass) poolNote.className = noteClass
     if (startButton.disabled !== shortPool) startButton.disabled = shortPool
+    const startLabel = exam ? 'Empezar examen' : 'Comenzar test'
+    if (startButton.firstChild.data !== startLabel) startButton.firstChild.data = startLabel
   }
+
+  // A segmented control, not two cards inside a card: the halves share one
+  // frame and the selected one is tinted, so the choice reads at a glance.
+  const modeButtonClass = (on) =>
+    `group flex w-full items-start gap-4 p-5 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-600 ${on ? 'bg-brand-50/70 dark:bg-brand-900/25' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`
+
+  const modeTileClass = (on) =>
+    `grid h-11 w-11 shrink-0 place-items-center rounded-md border transition ${on ? 'border-brand-200 bg-white text-brand-700 shadow-sm dark:border-brand-700 dark:bg-brand-900/70 dark:text-brand-200' : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'}`
+
+  const modeMarkClass = (on) =>
+    `mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition ${on ? 'border-brand-600 bg-brand-600' : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800'}`
+
+  const selectMode = (key) => {
+    if (mode === key) return
+    mode = key
+    sync()
+  }
+
+  // Arrow keys move the choice like a real radio group; Enter and Space already
+  // click a button natively.
+  const onModeKey = (event, key) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key]
+    if (!step) return
+    event.preventDefault()
+    const order = modeNodes.map((entry) => entry.key)
+    const next = order[(order.indexOf(key) + step + order.length) % order.length]
+    selectMode(next)
+    modeNodes.find((entry) => entry.key === next).button.focus()
+  }
+
+  const buildModeButton = (key, title, copy, iconName) => {
+    const checkIcon = icon('check', 'h-3 w-3 text-white')
+    checkIcon.style.opacity = '0'
+    const mark = el('span', { class: modeMarkClass(false), kids: [checkIcon] })
+    const tile = el('span', { class: modeTileClass(false), kids: [icon(iconName, 'h-5 w-5')] })
+    const button = el(
+      'button',
+      {
+        type: 'button',
+        role: 'radio',
+        'aria-checked': 'false',
+        tabindex: '-1',
+        'data-mode': key,
+        class: modeButtonClass(false),
+        on: {
+          click: () => selectMode(key),
+          keydown: (event) => onModeKey(event, key),
+        },
+      },
+      tile,
+      el(
+        'span',
+        { class: 'min-w-0 flex-1' },
+        el('span', { class: 'block font-display text-base font-semibold text-ink', text: title }),
+        el('span', { class: 'mt-1 block text-[13px] leading-relaxed text-slate-600 dark:text-slate-400', text: copy }),
+      ),
+      mark,
+    )
+    modeNodes.push({ key, button, mark, tile, check: checkIcon })
+    return button
+  }
+
+  // A reload mid-exam leaves a saved attempt: resuming keeps its questions,
+  // answers and remaining time.
+  const resumeBanner = resume
+    ? el(
+      'section',
+      {
+        class:
+          'mt-6 rounded-md border border-amber-300 bg-amber-50 p-5 shadow-card dark:border-amber-800 dark:bg-amber-900/20 sm:p-6',
+      },
+      el(
+        'div',
+        { class: 'flex flex-wrap items-start justify-between gap-4' },
+        el(
+          'div',
+          { class: 'flex items-start gap-3' },
+          el('span', {
+            class:
+              'grid h-10 w-10 shrink-0 place-items-center rounded-md bg-white text-amber-700 shadow-sm dark:bg-amber-900/50 dark:text-amber-200',
+            kids: [icon('clock', 'h-5 w-5')],
+          }),
+          el(
+            'div',
+            { class: 'min-w-0' },
+            el('h2', { class: 'font-display text-lg font-semibold text-ink', text: 'Tienes un examen a medias' }),
+            el('p', {
+              class: 'mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300',
+              text: `Quedan ${formatClock(remainingSeconds(resume.deadline, Date.now()))}. Conserva tus respuestas; si el tiempo ya se agotó, se entregará al reanudar.`,
+            }),
+          ),
+        ),
+        el(
+          'div',
+          { class: 'flex flex-wrap gap-2' },
+          el('button', {
+            type: 'button',
+            'data-action': 'resume-exam',
+            class:
+              'inline-flex items-center gap-2 rounded bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-500 active:translate-y-px',
+            on: { click: onResume },
+            kids: [icon('right', 'h-4 w-4'), 'Reanudar examen'],
+          }),
+          el('button', {
+            type: 'button',
+            'data-action': 'discard-exam',
+            class:
+              'rounded border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/40',
+            on: { click: onDiscardResume },
+            text: 'Descartar',
+          }),
+        ),
+      ),
+    )
+    : null
+
+  const modeCard = el(
+    'section',
+    { class: 'mt-6 rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6' },
+    el(
+      'div',
+      { class: 'flex items-start gap-3' },
+      el('span', { class: 'mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400', text: '1' }),
+      el(
+        'div',
+        null,
+        el('h2', { id: 'mode-title', class: 'font-display text-lg font-semibold text-ink', text: 'Modalidad' }),
+        el('p', { class: 'text-xs text-slate-500', text: 'Elige cómo quieres hacer el test.' }),
+      ),
+    ),
+    el('div', {
+      role: 'radiogroup',
+      'aria-labelledby': 'mode-title',
+      class:
+        'mt-4 grid grid-cols-1 divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 dark:divide-slate-700 dark:border-slate-700 md:grid-cols-2 md:divide-x md:divide-y-0',
+      kids: [
+        buildModeButton(
+          'practice',
+          'Práctica',
+          'Temas y número de preguntas a tu medida, con pistas del reglamento en cada pregunta.',
+          'bulb',
+        ),
+        buildModeButton(
+          'exam',
+          'Examen',
+          `${EXAM.size} preguntas de todo el catálogo en ${EXAM.seconds / 60} minutos, sin pistas.`,
+          'clock',
+        ),
+      ],
+    }),
+  )
 
   const chipClass = (on) =>
     `option flex w-full items-center gap-3 rounded border px-3.5 py-3 text-left ${on ? 'border-brand-500 bg-brand-50/80 shadow-card ring-1 ring-brand-500 dark:border-brand-500 dark:bg-brand-900/40' : 'border-slate-200 bg-white hover:border-brand-300 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/60'}`
@@ -195,7 +372,7 @@ export const mount = (node, options) => {
   }
   const hero = heroNode
 
-  const topicsCard = el(
+  topicsCard = el(
     'section',
     { class: 'mt-6 rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6' },
     el(
@@ -204,7 +381,7 @@ export const mount = (node, options) => {
       el(
         'div',
         { class: 'flex items-start gap-3' },
-        el('span', { class: 'mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400', text: '1' }),
+        el('span', { class: 'mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400', text: '2' }),
         el(
           'div',
           null,
@@ -257,13 +434,13 @@ export const mount = (node, options) => {
     topicToggle.textContent = topicsExpanded ? 'Ocultar temas' : 'Ver temas'
   }
 
-  const sizesCard = el(
+  sizesCard = el(
     'section',
     { class: 'mt-6 rounded-md border border-slate-200/80 bg-white p-5 shadow-card sm:p-6' },
     el(
       'div',
       { class: 'flex items-start gap-3' },
-      el('span', { class: 'mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400', text: '2' }),
+      el('span', { class: 'mr-2 font-display text-4xl font-bold text-brand-600 dark:text-brand-400', text: '3' }),
       el(
         'div',
         null,
@@ -292,7 +469,13 @@ export const mount = (node, options) => {
     on: {
       click: () => {
         if (startButton.disabled) return
-        onStart({ topics: Array.from(selected), size })
+        // An exam always draws from the whole catalogue; main.js shows the
+        // briefing before every exam, including the repeat-test path.
+        if (mode === 'exam') {
+          onStart({ topics: allTopics.map((topic) => topic.id), size: EXAM.size, mode: 'exam' })
+          return
+        }
+        onStart({ topics: Array.from(selected), size, mode: 'practice' })
       },
     },
     kids: ['Comenzar test', icon('right', 'h-5 w-5 transition-transform group-hover:translate-x-0.5')],
@@ -357,7 +540,7 @@ export const mount = (node, options) => {
   Array.from(node.childNodes).forEach((child) => {
     if (child !== hero) node.removeChild(child)
   })
-  append(node, [topicsCard, sizesCard, summary, gitHubCard])
+  append(node, [resumeBanner, modeCard, topicsCard, sizesCard, summary, gitHubCard])
   sync()
   syncTopics()
 }

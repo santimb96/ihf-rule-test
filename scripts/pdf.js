@@ -8,6 +8,7 @@
 import { toast } from './render.js'
 import { topics, topicLabel, chips } from './data.js'
 import { questionStatus } from './scoring.js'
+import { EXAM } from './timer.js'
 
 // --- page grid (mm) ------------------------------------------------------
 const PAGE = { w: 210, h: 297 }
@@ -442,6 +443,7 @@ export const generate = async (report, config) => {
           ? `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%), por encima del 75% exigido.`
           : `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%). Necesitabas ${required} puntos para aprobar (75%).`
     const details = [
+      config.mode === 'exam' ? `Examen · ${EXAM.seconds / 60} minutos` : null,
       `${total}${total === 1 ? ' pregunta' : ' preguntas'}`,
       `Mínimo para aprobar: ${required}${required === 1 ? ' punto' : ' puntos'} (75%)`,
       elapsedTime !== undefined ? `Tiempo: ${Math.floor(elapsedTime / 60)}m ${elapsedTime % 60}s` : null,

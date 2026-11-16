@@ -1,8 +1,11 @@
-import { load, pool } from './data.js'
+import { load, pool, questions } from './data.js'
 import { createQuiz } from './quiz.js'
 import { el, icon, showScreen, toast } from './render.js'
 import { mount as mountSetup } from './screens/setup.js'
 import * as Stats from './stats.js'
+import { EXAM } from './timer.js'
+import { openBriefing } from './exam-briefing.js'
+import * as ExamSession from './exam-session.js'
 
 // Each screen is its own chunk: the first paint only pays for setup, and the
 // quiz, results, statistics and PDF pipeline load on the first click that
@@ -82,50 +85,114 @@ const renderHeaderStatsButton = () => {
 const showSetup = () => {
   renderHeaderStatsButton()
   showScreen('screen-setup')
+  // An exam in progress survives a reload; the setup offers to resume it.
+  const resume = ExamSession.load()
   mountSetup(screenNode('screen-setup'), {
     onStart: (config) => {
       state.config = config
       startQuiz(config)
     },
+    resume,
+    onResume: () => resumeExam(resume),
+    onDiscardResume: () => {
+      ExamSession.clear()
+      showSetup()
+    },
   })
 }
 
-const startQuiz = (config) => {
-  // The dataset is a separate chunk: fetch it before the attempt is built, so
-  // the first paint never pays for the catalogue.
+const resumeExam = (session) => {
   load()
     .then(() => {
-      launchQuiz(pool(config.topics), config.size, Stats.MODES.full)
+      const byId = new Map(questions().map((question) => [question.id, question]))
+      const pairs = session.questionIds
+        .map((id, index) => ({ question: byId.get(id), letters: session.selected[index] }))
+        .filter((pair) => pair.question)
+      if (!pairs.length) {
+        ExamSession.clear()
+        toast('El examen guardado ya no se puede reanudar.')
+        showSetup()
+        return
+      }
+      state.config = session.config
+      launchQuiz(
+        pairs.map((pair) => pair.question),
+        pairs.length,
+        Stats.MODES.exam,
+        { items: pairs.map((pair) => pair.question), selected: pairs.map((pair) => pair.letters), deadline: session.deadline },
+      )
     })
     .catch(() => {
       toast('No se pudo cargar el catálogo de preguntas. Revisa tu conexión y vuelve a intentarlo.')
     })
 }
 
+const startQuiz = (config) => {
+  // Every exam passes the rules first, whichever button started it.
+  const run = () => {
+    // The dataset is a separate chunk: fetch it before the attempt is built, so
+    // the first paint never pays for the catalogue.
+    load()
+      .then(() => {
+        const mode = config.mode === 'exam' ? Stats.MODES.exam : Stats.MODES.full
+        launchQuiz(pool(config.topics), config.size, mode)
+      })
+      .catch(() => {
+        toast('No se pudo cargar el catálogo de preguntas. Revisa tu conexión y vuelve a intentarlo.')
+      })
+  }
+  if (config.mode === 'exam') openBriefing(run)
+  else run()
+}
+
 // One mount for both paths (a fresh test and the retry of the misses) so the
 // attempt is recorded in a single place.
-const launchQuiz = (questions, size, mode) => {
+const launchQuiz = (pool_, size, mode, restore = null) => {
   if (starting) return
   starting = true
 
   loadChunk('quiz')
     .then(({ mount: mountQuiz }) => {
       starting = false
-      state.quiz = createQuiz({ pool: questions, size })
-      state.startTime = Date.now()
+      const exam = mode === Stats.MODES.exam
+      state.quiz = restore
+        ? createQuiz({ items: restore.items, restored: restore.selected })
+        : createQuiz({ pool: pool_, size })
+      const deadline = exam ? (restore ? restore.deadline : Date.now() + EXAM.seconds * 1000) : null
+      // A resumed exam keeps its original clock, so the elapsed time is the
+      // time actually spent, not the time since the reload.
+      state.startTime = exam ? deadline - EXAM.seconds * 1000 : Date.now()
       state.elapsedTime = 0
+      const persist = () => {
+        if (!exam) return
+        ExamSession.save({
+          config: state.config,
+          deadline,
+          questionIds: state.quiz.items.map((question) => question.id),
+          selected: state.quiz.items.map((_, index) => state.quiz.selected(index)),
+        })
+      }
       showScreen('screen-quiz')
       mountQuiz(screenNode('screen-quiz'), {
         quiz: state.quiz,
+        mode: exam ? 'exam' : 'practice',
+        deadline,
+        onProgress: persist,
         onFinish: (report) => {
-          state.elapsedTime = Math.floor((Date.now() - state.startTime) / 1000)
+          ExamSession.clear()
+          const used = Math.floor((Date.now() - state.startTime) / 1000)
+          state.elapsedTime = exam ? Math.min(used, EXAM.seconds) : used
           report.elapsedTime = state.elapsedTime
           state.report = report
           recordAttempt(report, mode)
           showResults()
         },
-        onExit: showSetup,
+        onExit: () => {
+          ExamSession.clear()
+          showSetup()
+        },
       })
+      persist()
     })
     .catch(() => {
       starting = false
@@ -166,7 +233,7 @@ const showResults = () => {
             .filter((result) => !result.correct)
             .map((result) => result.question)
           const size = Math.min(state.config.size, failed.length)
-          state.config = { ...state.config, size }
+          state.config = { ...state.config, size, mode: 'practice' }
           launchQuiz(failed, size, Stats.MODES.retry)
         },
         onNew: showSetup,

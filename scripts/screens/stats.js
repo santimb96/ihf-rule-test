@@ -2,7 +2,7 @@
 // the answer mix, the practiced rules and the per-attempt record.
 import { questions } from '../data.js'
 import { closeButton, open as openDialog } from '../dialog.js'
-import { append, el, icon, reducedMotion, toast } from '../render.js'
+import { append, el, icon, mount as mountChildren, reducedMotion, toast } from '../render.js'
 import { MODES, all, byRule, clear, exportJson, summary, trend } from '../stats.js'
 
 const TONE = {
@@ -176,7 +176,12 @@ const historyBlock = (attempts) => {
       'ul',
       { class: 'mt-3 space-y-2' },
       recent.map((attempt) => {
-        const retry = attempt.mode === MODES.retry
+        const badge =
+          attempt.mode === MODES.retry
+            ? { label: 'repaso', tone: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300' }
+            : attempt.mode === MODES.exam
+              ? { label: 'examen', tone: 'bg-brand-100 text-brand-700 dark:bg-brand-900/60 dark:text-brand-200' }
+              : null
         return el(
           'li',
           { class: 'flex items-center gap-3' },
@@ -186,8 +191,11 @@ const historyBlock = (attempts) => {
             class: `w-14 shrink-0 text-right text-xs font-semibold tabular-nums ${attempt.passed ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`,
             text: pct(attempt.pct),
           }),
-          retry
-            ? el('span', { class: 'shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-700 dark:text-slate-300', text: 'repaso' })
+          badge
+            ? el('span', {
+              class: `shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badge.tone}`,
+              text: badge.label,
+            })
             : el('span', { class: 'w-0 shrink-0' }),
         )
       }),
@@ -289,9 +297,17 @@ export const open = ({ onCleared } = {}) => {
     questionsById[question.id] = question
   })
 
-  const summaryData = summary(attempts)
-  const trendData = trend(attempts)
-  const ruleData = byRule(attempts, questionsById)
+  // Practice and exams are different regimes: an exam is 30 questions without
+  // hints, so mixing them distorts the average and the trend. The filter is
+  // the user's call, "Todo" stays the default.
+  let modeFilter = 'all'
+  const hasExams = attempts.some((attempt) => attempt.mode === MODES.exam)
+  const filterAttempts = () =>
+    attempts.filter((attempt) => {
+      if (modeFilter === 'all') return true
+      if (modeFilter === 'exam') return attempt.mode === MODES.exam
+      return attempt.mode !== MODES.exam
+    })
 
   let closeTimer = null
   let confirmingClear = false
@@ -360,18 +376,85 @@ export const open = ({ onCleared } = {}) => {
     closeControl,
   )
 
-  const body = el('div', { class: 'px-5 py-4 sm:px-6 sm:py-5' }, [
-    el(
-      'div',
-      { class: 'grid grid-cols-2 gap-3 sm:grid-cols-4' },
-      [
+  const bodyHost = el('div')
+
+  const renderBody = () => {
+    const filtered = filterAttempts()
+    if (!filtered.length) {
+      mountChildren(
+        bodyHost,
+        el('p', {
+          class: 'mt-4 rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300',
+          text: 'No hay tests con este filtro todavía.',
+        }),
+      )
+      return
+    }
+
+    const summaryData = summary(filtered)
+    const trendData = trend(filtered)
+    const ruleData = byRule(filtered, questionsById)
+
+    mountChildren(bodyHost, [
+      el('div', { class: 'mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4' }, [
         card('Tests', String(summaryData.attempts), `${summaryData.questions} preguntas`),
         card('Media', pct(summaryData.averagePct), 'del total'),
         card('Mejor', pct(summaryData.bestPct), 'hasta ahora'),
         card('Aprobados', `${summaryData.passed} de ${summaryData.attempts}`, '≥75%'),
-      ],
-    ),
-    el('div', { class: 'mt-3 space-y-3' }, [trendBlock(trendData), countsBlock(summaryData), historyBlock(attempts), rulesBlock(ruleData)]),
+      ]),
+      el('div', { class: 'mt-3 space-y-3' }, [
+        trendBlock(trendData),
+        countsBlock(summaryData),
+        historyBlock(filtered),
+        rulesBlock(ruleData),
+      ]),
+    ])
+  }
+
+  const filterClass = (on) =>
+    `rounded px-3 py-1.5 text-xs font-semibold transition ${
+      on ? 'bg-brand-600 text-white shadow-card' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+    }`
+
+  const filterButton = (key, label) =>
+    el('button', {
+      type: 'button',
+      'data-filter': key,
+      'aria-pressed': String(key === modeFilter),
+      class: filterClass(key === modeFilter),
+      on: {
+        click: () => {
+          if (modeFilter === key) return
+          modeFilter = key
+          filters.forEach((node) => {
+            const on = node.getAttribute('data-filter') === key
+            node.setAttribute('aria-pressed', String(on))
+            node.className = filterClass(on)
+          })
+          renderBody()
+        },
+      },
+      text: label,
+    })
+
+  const filters = [
+    filterButton('all', 'Todo'),
+    ...(hasExams ? [filterButton('practice', 'Práctica'), filterButton('exam', 'Examen')] : []),
+  ]
+
+  const body = el('div', { class: 'px-5 py-4 sm:px-6 sm:py-5' }, [
+    hasExams
+      ? el(
+        'div',
+        {
+          class: 'flex flex-wrap items-center gap-1 rounded border border-slate-200 p-1 dark:border-slate-700',
+          role: 'group',
+          'aria-label': 'Filtrar por modalidad',
+        },
+        filters,
+      )
+      : null,
+    bodyHost,
     el(
       'div',
       { class: 'mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-4 dark:border-slate-700' },
@@ -379,6 +462,8 @@ export const open = ({ onCleared } = {}) => {
       el('div', { class: 'flex flex-wrap gap-2' }, [exportButton, clearButton]),
     ),
   ])
+
+  renderBody()
 
   handle = openDialog({
     id: 'stats-dialog',

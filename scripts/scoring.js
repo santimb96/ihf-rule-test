@@ -21,13 +21,20 @@ export const passes = (score, total) => {
 
 export const requiredCorrect = (total) => Math.ceil(PASS_RATIO * total)
 
+// Hits and misses over one question: the only place that decides which marked
+// option is which, so the points and the report totals cannot drift apart.
+export const answerPicks = (selected, answer) => {
+  const hits = selected.filter((letter) => answer.includes(letter)).length
+  return { hits, misses: selected.length - hits }
+}
+
 // The score is counted over the possible answers, not over the questions:
 // every correct option marked adds a point and every wrong option marked
 // subtracts one, so a question can end up with negative points.
 export const questionPoints = (selected, answer) => {
   if (!selected?.length) return 0
-  const hits = selected.filter((letter) => answer.includes(letter)).length
-  return hits - (selected.length - hits)
+  const { hits, misses } = answerPicks(selected, answer)
+  return hits - misses
 }
 
 export const questionStatus = (selected, answer) => {

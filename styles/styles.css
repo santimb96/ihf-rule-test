@@ -541,3 +541,15 @@ html.dark *::-webkit-scrollbar-thumb {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Exam mode: the official rulebooks are one click away in the footer, so the
+   exam hides them. The rest of the footer stays. */
+body[data-exam='on'] footer a[href^='documents/'] {
+  display: none;
+}
+
+/* The question heading receives focus programmatically so screen readers
+   announce it; the outline would draw a box around plain text. */
+#quiz-question:focus-visible {
+  outline: none;
+}

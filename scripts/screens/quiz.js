@@ -1,110 +1,80 @@
 import { topicLabel } from '../data.js'
 import { create as createHint } from '../hint.js'
-import { el, icon, mount as mountChildren, reducedMotion } from '../render.js'
+import { el, icon, mount as mountChildren, reducedMotion, toast } from '../render.js'
+import { WARNING_THRESHOLDS, formatClock, remainingSeconds, warningDue, warningText } from '../timer.js'
+import { open as openDialog } from '../dialog.js'
 
 const PILL_CLASS = 'h-11 min-w-[44px] rounded px-2 text-xs font-bold transition sm:h-8 sm:min-w-[32px]'
 
-const openConfirm = ({ title, message, cancelText, confirmText, danger, onConfirm }) => {
-  let overlay
-  let dialog
-  let cancelButton
-  // Focus starts inside the dialog and goes back to the trigger on close, so
-  // keyboard and screen-reader users do not have to hunt for it.
-  const restoreTo = document.activeElement
+const TIMER_BASE = 'inline-flex items-center gap-2 rounded border px-3.5 py-2 text-xs font-semibold shadow-sm transition-colors'
 
-  const focusables = () =>
-    Array.prototype.slice
-      .call(dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
-      .filter((node) => !node.disabled && node.offsetParent !== null)
-
-  const close = () => {
-    overlay.remove()
-    document.removeEventListener('keydown', onKey)
-    if (restoreTo && typeof restoreTo.focus === 'function') restoreTo.focus()
-  }
-
-  const onKey = (event) => {
-    if (event.key === 'Escape') {
-      close()
-      return
-    }
-    if (event.key !== 'Tab') return
-    const items = focusables()
-    if (!items.length) return
-    const first = items[0]
-    const last = items[items.length - 1]
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  }
-
-  dialog = el(
-    'div',
-    {
-      class: 'w-full max-w-sm rounded-md bg-white p-6 shadow-lift animate-pop-in',
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-labelledby': 'confirm-dialog-title',
-    },
-    el('h3', { id: 'confirm-dialog-title', class: 'font-display text-lg font-semibold text-ink', text: title }),
-    el('p', { class: 'mt-2 text-sm leading-relaxed text-slate-600', text: message }),
-    el(
-      'div',
-      { class: 'mt-5 flex justify-end gap-3' },
-      (cancelButton = el('button', {
-        type: 'button',
-        class: 'rounded border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50',
-        on: { click: close },
-        text: cancelText || 'Cancelar',
-      })),
-      el('button', {
-        type: 'button',
-        class: `rounded px-4 py-2 text-sm font-semibold text-white transition ${danger ? 'bg-rose-600 hover:bg-rose-500' : 'bg-brand-600 hover:bg-brand-500'}`,
-        on: {
-          click: () => {
-            close()
-            onConfirm()
-          },
-        },
-        text: confirmText,
-      }),
-    ),
-  )
-  overlay = el(
-    'div',
-    {
-      class: 'fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4 backdrop-blur-sm animate-fade-in',
-      on: {
-        click: (event) => {
-          if (event.target === overlay) close()
-        },
-      },
-    },
-    dialog,
-  )
-  document.body.appendChild(overlay)
-  document.addEventListener('keydown', onKey)
-  cancelButton.focus()
+// Amber at five minutes, red at the last one: the pair of warnings the exam
+// announces, so the colour and the toast never disagree.
+const timerTone = (level) => {
+  if (level === 'danger') return 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/40 dark:text-rose-200'
+  if (level === 'warn') return 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+  return 'border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200'
 }
 
-export const mount = (node, { quiz, onFinish, onExit }) => {
+const openConfirm = ({ title, message, cancelText, confirmText, danger, onConfirm }) => {
+  let dialog = null
+  const cancelButton = el('button', {
+    type: 'button',
+    class:
+      'rounded border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
+    on: { click: () => dialog?.close() },
+    text: cancelText || 'Cancelar',
+  })
+  const confirmButton = el('button', {
+    type: 'button',
+    class: `rounded px-4 py-2 text-sm font-semibold text-white transition ${danger ? 'bg-rose-600 hover:bg-rose-500' : 'bg-brand-600 hover:bg-brand-500'}`,
+    on: {
+      click: () => {
+        dialog?.close()
+        onConfirm()
+      },
+    },
+    text: confirmText,
+  })
+
+  // One dialog implementation for the whole app: focus trap, Escape and scroll
+  // lock live in dialog.js.
+  dialog = openDialog({
+    id: 'quiz-confirm',
+    labelledBy: 'quiz-confirm-title',
+    className: 'w-full max-w-sm rounded-md bg-white p-6 shadow-lift animate-pop-in dark:bg-slate-900',
+    children: [
+      el('h3', { id: 'quiz-confirm-title', class: 'font-display text-lg font-semibold text-ink', text: title }),
+      el('p', { class: 'mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300', text: message }),
+      el('div', { class: 'mt-5 flex flex-wrap justify-end gap-3' }, [cancelButton, confirmButton]),
+    ],
+    initialFocus: cancelButton,
+  })
+
+  return () => dialog?.close()
+}
+
+export const mount = (node, { quiz, onFinish, onExit, onProgress, mode = 'practice', deadline = null }) => {
   const total = quiz.items.length
   const startTime = Date.now()
+  const exam = mode === 'exam' && Number.isFinite(deadline)
   let index = 0
   let timerInterval = null
+  let delivered = false
+  let activeConfirm = null
+  let firedWarnings = []
 
   const fill = el('div', { class: 'progress-fill h-full rounded-full', style: { width: '0%' } })
   const counter = el('span', { class: 'font-display text-sm font-semibold text-ink' })
   const answeredLabel = el('span', { class: 'text-xs font-medium text-slate-500' })
   const timerTextSpan = el('span', { class: 'font-display font-semibold tracking-normal text-xs' })
+  // Warnings are announced once each; the ticking clock itself stays silent so
+  // a screen reader is not read the time every second.
+  const timerStatus = el('span', { class: 'sr-only', role: 'status', 'aria-live': 'polite' })
   const timerLabel = el('span', {
-    class:
-      'inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200',
-    kids: [icon('clock', 'h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400'), timerTextSpan],
+    class: `${TIMER_BASE} ${timerTone('neutral')}`,
+    'aria-label': exam ? 'Tiempo restante de examen' : 'Tiempo transcurrido',
+    kids: [icon('clock', 'h-4 w-4 shrink-0'), timerTextSpan],
   })
   const pills = el('div', { class: 'flex flex-wrap gap-1.5' })
   const cardHost = el('div', { class: 'mt-4' })
@@ -116,22 +86,85 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
   let nextLabel
   let questionHeading = null
 
-  const updateTimer = () => {
-    const elapsed = Math.min(Math.floor((Date.now() - startTime) / 1000), 3599) // Cap at 59:59
-    const mins = Math.floor(elapsed / 60)
-    const secs = elapsed % 60
-    const text = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-    if (timerTextSpan.textContent !== text) timerTextSpan.textContent = text
-  }
-
-  timerInterval = setInterval(updateTimer, 1000)
-  updateTimer()
-
   const clearTimer = () => {
     if (!timerInterval) return
     clearInterval(timerInterval)
     timerInterval = null
   }
+
+  // A reload mid-exam would throw the attempt away: the browser asks first.
+  const guardUnload = exam
+    ? (event) => {
+      if (delivered) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    : null
+  if (guardUnload) {
+    window.addEventListener('beforeunload', guardUnload)
+    document.body.dataset.exam = 'on'
+  }
+
+  const teardown = () => {
+    clearTimer()
+    if (!guardUnload) return
+    window.removeEventListener('beforeunload', guardUnload)
+    delete document.body.dataset.exam
+  }
+
+  // One delivery per attempt: the manual finish and the clock expiry share it,
+  // and a late tick cannot submit twice.
+  const deliver = () => {
+    if (delivered) return
+    delivered = true
+    clearTimer()
+    if (activeConfirm) {
+      const close = activeConfirm
+      activeConfirm = null
+      close()
+    }
+    teardown()
+    onFinish(quiz.report())
+  }
+
+  const setTimerTone = (level) => {
+    const cls = `${TIMER_BASE} ${timerTone(level)}`
+    if (timerLabel.className !== cls) timerLabel.className = cls
+  }
+
+  const updateTimer = () => {
+    if (!exam) {
+      const elapsed = Math.min(Math.floor((Date.now() - startTime) / 1000), 3599) // Cap at 59:59
+      const text = formatClock(elapsed)
+      if (timerTextSpan.textContent !== text) timerTextSpan.textContent = text
+      return
+    }
+
+    const left = remainingSeconds(deadline, Date.now())
+    const text = formatClock(left)
+    if (timerTextSpan.textContent !== text) timerTextSpan.textContent = text
+    setTimerTone(left <= 60 ? 'danger' : left <= WARNING_THRESHOLDS[0] ? 'warn' : 'neutral')
+
+    // At zero the delivery toast is the only message: a sleeping tab must not
+    // announce "one minute left" at the same instant.
+    const warning = left > 0 ? warningDue(left, firedWarnings) : null
+    if (warning) {
+      // A late tick that skipped the five minute mark only announces the
+      // tighter one, never both in a row.
+      firedWarnings = WARNING_THRESHOLDS.filter((threshold) => threshold >= warning)
+      const copy = warningText(warning)
+      toast(copy)
+      timerStatus.textContent = copy
+    }
+
+    if (left <= 0) {
+      toast('Se acabó el tiempo: el examen se entrega solo.')
+      deliver()
+    }
+  }
+
+  timerInterval = setInterval(updateTimer, 1000)
+  updateTimer()
 
   const answeredCount = () => quiz.answeredCount()
 
@@ -169,7 +202,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
     })
     const atStart = index === 0
     if (prevButton && prevButton.disabled !== atStart) prevButton.disabled = atStart
-    setText(nextLabel, index === total - 1 ? 'Finalizar test' : 'Siguiente')
+    setText(nextLabel, index === total - 1 ? (exam ? 'Finalizar examen' : 'Finalizar test') : 'Siguiente')
     const last = index === total - 1
     nextButton.classList.toggle('from-emerald-500', last)
     nextButton.classList.toggle('to-emerald-400', last)
@@ -197,7 +230,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
   const renderQuestion = () => {
     const question = quiz.items[index]
     const letters = quiz.selected(index)
-    const hint = createHint(question)
+    const hint = exam ? null : createHint(question)
 
     const optionNodes = question.options.map((opt) => {
       const on = letters.includes(opt.letter)
@@ -219,6 +252,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
                 ? current.filter((letter) => letter !== opt.letter)
                 : current.concat(opt.letter).sort()
               quiz.select(index, next)
+              if (onProgress) onProgress()
               const checked = next.includes(opt.letter)
               optionButton.setAttribute('aria-checked', String(checked))
               optionButton.className = optionClass(checked)
@@ -267,7 +301,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
             text: topicLabel(question.topic),
           }),
         ),
-        hint.button,
+        exam ? null : hint.button,
       ),
       questionHeading,
       el('p', {
@@ -275,7 +309,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
         text: 'Marca todas las respuestas correctas. Puede haber más de una.',
       }),
       el('div', { class: 'mt-3 space-y-3', role: 'group', 'aria-labelledby': 'quiz-question', kids: optionNodes }),
-      hint.panel,
+      exam ? null : hint.panel,
     )
 
     mountChildren(cardHost, card)
@@ -296,7 +330,6 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
   }
 
   const finish = () => {
-    clearTimer()
     const pending = total - answeredCount()
     if (pending > 0) {
       const unansweredList = []
@@ -304,30 +337,37 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
         if (quiz.selected(i).length === 0) unansweredList.push(i + 1)
       }
       const listStr = `${unansweredList.slice(0, 5).join(', ')}${unansweredList.length > 5 ? '...' : ''}`
-      openConfirm({
+      activeConfirm = openConfirm({
         title: 'Faltan preguntas por responder',
-        message: `Tienes ${pending}${pending === 1 ? ' pregunta sin responder' : ' preguntas sin responder'} (${listStr}). Puedes terminar igualmente, pero se contarán como falladas.`,
+        message: `Tienes ${pending}${pending === 1 ? ' pregunta sin responder' : ' preguntas sin responder'} (${listStr}). Puedes terminar igualmente: lo que dejes en blanco no suma puntos.`,
         confirmText: 'Terminar igualmente',
         danger: true,
-        onConfirm: () => onFinish(quiz.report()),
+        onConfirm: () => {
+          activeConfirm = null
+          deliver()
+        },
       })
       return
     }
-    onFinish(quiz.report())
+    deliver()
   }
 
   const exit = () => {
-    clearTimer()
     if (answeredCount() > 0) {
-      openConfirm({
+      activeConfirm = openConfirm({
         title: 'Salir del test',
-        message: 'Perderás las respuestas de este intento. ¿Quieres salir?',
+        message: exam ? 'Perderás las respuestas y el tiempo de este examen. ¿Quieres salir?' : 'Perderás las respuestas de este intento. ¿Quieres salir?',
         confirmText: 'Salir',
         danger: true,
-        onConfirm: () => onExit(),
+        onConfirm: () => {
+          activeConfirm = null
+          teardown()
+          onExit()
+        },
       })
       return
     }
+    teardown()
     onExit()
   }
 
@@ -345,7 +385,7 @@ export const mount = (node, { quiz, onFinish, onExit }) => {
         on: { click: exit },
         kids: [icon('close', 'h-4 w-4'), 'Salir'],
       }),
-      el('div', { class: 'flex items-center gap-3' }, timerLabel, counter),
+      el('div', { class: 'flex items-center gap-3' }, timerLabel, counter, timerStatus),
       answeredLabel,
     ),
     el('div', { class: 'mt-3 h-2 overflow-hidden rounded-full bg-slate-100' }, fill),

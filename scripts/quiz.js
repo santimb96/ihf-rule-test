@@ -1,4 +1,4 @@
-import { passes, percentage, questionPoints, questionStatus, requiredCorrect } from './scoring.js'
+import { answerPicks, passes, percentage, questionPoints, questionStatus, requiredCorrect } from './scoring.js'
 
 // Fisher-Yates, so a fixed rng makes attempts reproducible in tests.
 export const shuffle = (items, rng) => {
@@ -12,10 +12,14 @@ export const shuffle = (items, rng) => {
   return out
 }
 
-export const createQuiz = ({ pool = [], size, rng = Math.random }) => {
+export const createQuiz = ({ pool = [], size, rng = Math.random, items: restoredItems = null, restored = null }) => {
+  // A resumed exam keeps its exact questions and order; a fresh one shuffles.
   const count = Math.min(size, pool.length)
-  const items = shuffle(pool, rng).slice(0, count)
-  const selected = items.map(() => [])
+  const items = restoredItems ? restoredItems.slice() : shuffle(pool, rng).slice(0, count)
+  const selected = items.map((_, index) => {
+    const letters = restored?.[index]
+    return Array.isArray(letters) ? letters.slice() : []
+  })
 
   return {
     items,
@@ -41,10 +45,11 @@ export const createQuiz = ({ pool = [], size, rng = Math.random }) => {
       const results = items.map((question, index) => {
         const picked = selected[index]
         const points = questionPoints(picked, question.answer)
+        const picks = answerPicks(picked, question.answer)
         score += points
         totalAnswers += question.answer.length
-        correctPicks += picked.filter((letter) => question.answer.includes(letter)).length
-        wrongPicks += picked.filter((letter) => !question.answer.includes(letter)).length
+        correctPicks += picks.hits
+        wrongPicks += picks.misses
         return {
           question,
           selected: picked.slice(),

@@ -29,6 +29,10 @@ estadísticas viajan con la web y viven en el navegador.
   franco, los 7 metros o la zona de cambios.
 - **Tests a medida**: eliges los temas y la duración (5, 10, 20 o 30 preguntas)
   y cada intento se genera barajando el banco.
+- **Modo examen**: 30 preguntas de todo el reglamento en 35 minutos, sin pistas,
+  con las reglas de corrección antes de empezar, avisos a los 5 minutos y al
+  último minuto, entrega automática cuando el tiempo llega a cero y examen
+  reanudable si recargas la página.
 - **Corrección por respuesta**: cada opción correcta suma un punto y cada opción
   errónea resta uno; la selección parcial de aciertos cuenta.
 - **Pistas con el reglamento**: en cada pregunta puedes abrir las directrices
@@ -36,10 +40,11 @@ estadísticas viajan con la web y viven en el navegador.
   cuando la referencia corresponde a un capítulo conocido.
 - **Nota y aprobado**: puntuación sobre el total de respuestas posibles, con el
   corte en el 75 % y dos decimales.
-- **Repaso de fallos**: al terminar puedes repetir solo las preguntas que no
-  acertaste.
+- **Repaso de fallos**: en práctica, al terminar puedes repetir solo las
+  preguntas que no acertaste. Un examen no se repite por partes.
 - **Estadísticas locales**: histórico por navegador con la mezcla de respuestas,
-  la regla más y menos acertada y la evolución reciente.
+  la regla más y menos acertada, la evolución reciente y filtro por modalidad
+  (práctica o examen).
 - **Informe en PDF**: descarga un resumen con cabecera, totales y el detalle de
   aciertos y fallos, con estilos propios.
 - **Todo en el dispositivo**: sin registro, sin cookies de terceros y con
@@ -47,9 +52,11 @@ estadísticas viajan con la web y viven en el navegador.
 
 ## Cómo se usa
 
-1. Elige los temas y la duración del test (5, 10, 20 o 30 preguntas).
-2. Responde cada pregunta; el botón de pista muestra las directrices que el
-   catálogo cita para esa respuesta.
+1. Elige la modalidad: **práctica** (temas y duración a medida) o **examen**
+   (30 preguntas de todos los temas en 35 minutos, con las reglas de corrección
+   antes de empezar).
+2. Responde cada pregunta; en práctica, el botón de pista muestra las
+   directrices que el catálogo cita para esa respuesta.
 3. Al terminar verás la puntuación, si apruebas (>= 75 % de las respuestas
    posibles) y la revisión pregunta a pregunta.
 4. Descarga el informe en PDF, repite los fallos o empieza un test nuevo.
@@ -118,6 +125,7 @@ scripts/
   app.js            entrada del bundler: metadatos del catálogo + main.js
   scoring.js        regla del 75 % sobre las respuestas posibles y estado de cada pregunta
   quiz.js           generador de intentos (barajado, respuestas, informe)
+  timer.js          reglas del modo examen y aritmética de la cuenta atrás (sin DOM)
   stats.js          histórico por navegador y agregaciones (sin DOM)
   data.js           acceso a metadatos y load() de las preguntas, más el análisis de pistas
   hint.js           componente compartido de pista desplegable
@@ -147,8 +155,9 @@ pnpm lint
 
 La suite cubre la integridad del conjunto de datos, la regla del 75 % sobre las
 respuestas posibles, la corrección por respuesta, la clasificación compartida de
-preguntas, el motor de test, el almacén de estadísticas local y la resolución de
-las citas de las pistas al texto de las reglas.
+preguntas, el motor de test, la cuenta atrás del modo examen con sus avisos, el
+almacén de estadísticas local y la resolución de las citas de las pistas al
+texto de las reglas.
 
 ## Aviso
 

@@ -3,7 +3,9 @@ import { questionStatus } from './scoring.js'
 export const KEY = 'ihf.stats.v1'
 export const SCHEMA_VERSION = 1
 export const MAX_ATTEMPTS = 200
-export const MODES = { full: 'full', retry: 'retry' }
+export const MODES = { full: 'full', retry: 'retry', exam: 'exam' }
+
+const normalizeMode = (mode) => (Object.values(MODES).includes(mode) ? mode : MODES.full)
 export const MIN_RULE_SEEN = 3
 
 const STATUSES = ['correct', 'partial', 'wrong', 'unanswered']
@@ -49,7 +51,7 @@ const sanitizeAttempt = (attempt) => {
   const items = attempt.items.map(sanitizeItem).filter(Boolean)
   return {
     at: attempt.at,
-    mode: attempt.mode === MODES.retry ? MODES.retry : MODES.full,
+    mode: normalizeMode(attempt.mode),
     size: isFiniteNumber(attempt.size) ? attempt.size : items.length,
     elapsed: isFiniteNumber(attempt.elapsed) ? attempt.elapsed : 0,
     score: isFiniteNumber(attempt.score) ? attempt.score : 0,
@@ -138,7 +140,7 @@ export const toAttempt = (report, mode, now) => {
 
   return {
     at: isFiniteNumber(now) ? now : Date.now(),
-    mode: mode === MODES.retry ? MODES.retry : MODES.full,
+    mode: normalizeMode(mode),
     size: report.total,
     elapsed: report.elapsedTime || 0,
     score: report.score,
