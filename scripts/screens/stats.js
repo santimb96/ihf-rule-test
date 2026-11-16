@@ -242,7 +242,7 @@ const rulesBlock = (ruleData) => {
         el('strong', { class: 'font-semibold text-ink dark:text-slate-100', text: top.label }),
         ' · ',
         `${top.seen} preguntas · `,
-        el('span', { class: `${accuracyTone(top.accuracy)} font-semibold`, text: `${pct(top.accuracy)} de acierto` }),
+        el('span', { class: `${accuracyTone(top.accuracy)} font-semibold`, text: `${pct(top.accuracy)} de puntos` }),
       ],
     ),
     weakestNote(weakest),

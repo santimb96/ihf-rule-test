@@ -54,7 +54,9 @@ const sanitizeAttempt = (attempt) => {
     elapsed: isFiniteNumber(attempt.elapsed) ? attempt.elapsed : 0,
     score: isFiniteNumber(attempt.score) ? attempt.score : 0,
     totalAnswers: isFiniteNumber(attempt.totalAnswers) ? attempt.totalAnswers : 0,
-    pct: attempt.pct,
+    // App writes never store a negative percentage, but an older or tampered
+    // record must not surface one either.
+    pct: Math.max(0, attempt.pct),
     passed: !!attempt.passed,
     items,
   }
@@ -251,7 +253,7 @@ export const byRule = (attempts, questionsById) => {
 
   const rules = order.map((key) => {
     const group = groups[key]
-    group.accuracy = group.totalAnswers ? round2((group.score / group.totalAnswers) * 100) : 0
+    group.accuracy = group.totalAnswers ? round2(Math.max(0, (group.score / group.totalAnswers) * 100)) : 0
     return group
   })
 

@@ -104,6 +104,14 @@ test('load drops invalid attempts and invalid items instead of the whole history
   assert.equal(loaded.attempts[0].mode, 'full')
 })
 
+test('load never surfaces a negative percentage from an old record', () => {
+  const stored = { v: 1, attempts: [{ at: 1, pct: -50, items: [] }] }
+  const loaded = Stats.load(fakeStorage({ [Stats.KEY]: JSON.stringify(stored) }))
+
+  assert.equal(loaded.attempts[0].pct, 0)
+  assert.equal(Stats.summary(loaded.attempts).averagePct, 0)
+})
+
 test('save reports a refused write instead of throwing', () => {
   const blocked = {
     getItem: () => null,
@@ -222,6 +230,18 @@ test('byRule groups by the primary rule and falls back to Otros', () => {
   assert.equal(byLabel['Otros'].seen, 1)
   assert.equal(result.mostPracticed.label, 'Regla 2')
   assert.equal(result.weakest.label, 'Regla 2')
+})
+
+test('a rule with more misses than hits reports 0%, never a negative figure', () => {
+  const questionsById = { '5.1': { rules: '5:1' } }
+  const attempts = [
+    attempt(0, {
+      items: [item('5.1', 'wrong', -2, 2), item('5.1', 'wrong', -1, 2)],
+    }),
+  ]
+
+  const result = Stats.byRule(attempts, questionsById)
+  assert.equal(result.rules[0].accuracy, 0)
 })
 
 test('byRule keeps a rule out of the weak spot until it has enough sightings', () => {
