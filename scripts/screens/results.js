@@ -155,9 +155,19 @@ const reviewCard = (result) => {
 
 export const mount = (node, options) => {
   const { report, config, onDownload, onRetry, onRetryFailed, onNew } = options
+  // A negative net score is reported as 0; the misses line carries the detail.
+  const shownScore = Math.max(0, report.score)
+  const negative = report.score < 0
+  const wrongPicks = report.wrongPicks || 0
+  const statusCount = (status) => report.results.filter((result) => result.status === status).length
   const failedCount = report.results.filter((result) => !result.correct).length
   // A failed attempt opens on its misses: reviewing them is the study moment.
-  let filter = report.passed ? 'all' : 'failed'
+  let filter = 'all'
+  if (!report.passed) {
+    if (statusCount(STATUS.wrong)) filter = 'wrong'
+    else if (statusCount(STATUS.partial)) filter = 'partial'
+    else if (statusCount(STATUS.unanswered)) filter = 'unanswered'
+  }
 
   const ringStroke = el('circle', {
     class: `ring-progress ${report.passed ? 'stroke-emerald-600 dark:stroke-emerald-400' : 'stroke-rose-600 dark:stroke-rose-400'}`,
@@ -177,9 +187,8 @@ export const mount = (node, options) => {
   let shown = {}
 
   const matches = (result) => {
-    if (filter === 'correct') return result.correct
-    if (filter === 'failed') return !result.correct
-    return true
+    if (filter === 'all') return true
+    return result.status === filter
   }
 
   const cardAt = (position) => {
@@ -312,7 +321,7 @@ export const mount = (node, options) => {
       on: { click: onRetryFailed },
       kids: [
         icon('refresh', 'h-4 w-4'),
-        failedCount === 1 ? 'Repetir el fallo' : `Repetir los ${failedCount} fallos`,
+        failedCount === 1 ? 'Repetir la que no acertaste' : `Repetir las ${failedCount} que no acertaste`,
       ],
     })
   }
@@ -352,7 +361,7 @@ export const mount = (node, options) => {
           'div',
           { class: 'absolute inset-0 flex flex-col items-center justify-center gap-1' },
           el('span', { class: 'font-display text-3xl font-bold text-ink', text: `${report.percentage}%` }),
-          el('span', { class: 'text-[11px] font-medium uppercase tracking-wide text-slate-500', text: 'respuestas' }),
+          el('span', { class: 'text-[11px] font-medium uppercase tracking-wide text-slate-500', text: 'puntos' }),
         ),
       ),
       el(
@@ -369,14 +378,14 @@ export const mount = (node, options) => {
           text: report.passed ? '¡Enhorabuena, has aprobado!' : '¡Esta vez no ha sido posible!',
         }),
         el('p', { class: 'mt-2 text-sm leading-relaxed text-slate-600' }, [
-          'Has acertado ',
+          'Has sumado ',
           el('strong', {
             class: 'font-semibold text-ink',
-            text: `${report.score} de ${report.totalAnswers} respuestas`,
+            text: `${shownScore} de ${report.totalAnswers} puntos`,
           }),
-          report.passed
-            ? ` (${report.percentage}%), por encima del 75% exigido.`
-            : ` (${report.percentage}%). Necesitabas ${report.required} respuestas correctas para aprobar (75%).`,
+          ` (${report.percentage}%).`,
+          negative ? ` ${wrongPicks} respuestas falladas de ${report.totalAnswers} posibles.` : '',
+          report.passed ? ' Por encima del 75% exigido.' : ` Necesitabas ${report.required} puntos para aprobar (75%).`,
         ]),
         el(
           'div',
@@ -384,7 +393,7 @@ export const mount = (node, options) => {
           [
             `${config.size} preguntas`,
             topicSummary,
-            `mín. ${report.required} respuestas`,
+            `mín. ${report.required} puntos`,
             report.elapsedTime !== undefined
               ? `Tiempo: ${Math.floor(report.elapsedTime / 60)}m ${report.elapsedTime % 60}s`
               : null,
@@ -439,9 +448,13 @@ export const mount = (node, options) => {
       el(
         'div',
         { class: 'flex flex-wrap gap-1 rounded border border-slate-200 bg-white p-1 dark:border-slate-800' },
-        buildTab('all', 'Todas', report.total),
-        buildTab('correct', 'Aciertos', report.correct),
-        buildTab('failed', 'Fallos', report.total - report.correct),
+        [
+          buildTab('all', 'Todas', report.total),
+          buildTab(STATUS.correct, 'Aciertos', statusCount(STATUS.correct)),
+          statusCount(STATUS.partial) ? buildTab(STATUS.partial, 'Parciales', statusCount(STATUS.partial)) : null,
+          statusCount(STATUS.wrong) ? buildTab(STATUS.wrong, 'Fallos', statusCount(STATUS.wrong)) : null,
+          statusCount(STATUS.unanswered) ? buildTab(STATUS.unanswered, 'Sin responder', statusCount(STATUS.unanswered)) : null,
+        ].filter(Boolean),
       ),
     ),
     legend,
@@ -453,7 +466,8 @@ export const mount = (node, options) => {
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      ringStroke.setAttribute('stroke-dashoffset', String(CIRCUMFERENCE * (1 - report.percentage / 100)))
+      const shown = Math.max(0, Math.min(100, report.percentage))
+      ringStroke.setAttribute('stroke-dashoffset', String(CIRCUMFERENCE * (1 - shown / 100)))
     })
   })
 }

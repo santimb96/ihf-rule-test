@@ -89,7 +89,7 @@ export const mount = (node, options) => {
     const shortPool = available < 5
     const note = shortPool
       ? 'Necesitas al menos 5 preguntas: selecciona más temas.'
-      : `Aprobado con ≥75% de las respuestas · ${size} preguntas`
+      : `Aprobado con ≥75% de los puntos · ${size} preguntas`
     const noteClass = shortPool ? 'text-xs font-medium text-rose-700' : 'text-xs text-slate-500'
     if (poolNote.textContent !== note) poolNote.textContent = note
     if (poolNote.className !== noteClass) poolNote.className = noteClass
@@ -270,7 +270,7 @@ export const mount = (node, options) => {
         el('h2', { class: 'font-display text-lg font-semibold text-ink', text: 'Preguntas por cuestionario' }),
         el(
           'p',
-          { class: 'text-xs text-slate-500', text: 'Se aprueba con un 75% o más de respuestas correctas. ' },
+          { class: 'text-xs text-slate-500', text: 'Se aprueba con un 75% o más de los puntos posibles. ' },
           el('strong', { class: 'font-semibold text-ink', text: 'Una o varias respuestas correctas por pregunta.' }),
         ),
       ),

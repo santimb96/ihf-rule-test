@@ -29,14 +29,15 @@ estadísticas viajan con la web y viven en el navegador.
   franco, los 7 metros o la zona de cambios.
 - **Tests a medida**: eliges los temas y la duración (5, 10, 20 o 30 preguntas)
   y cada intento se genera barajando el banco.
-- **Corrección por respuesta**: cada opción correcta suma, una sola opción
-  errónea anula la pregunta y la selección parcial de aciertos cuenta.
+- **Corrección por respuesta**: cada opción correcta suma un punto y cada opción
+  errónea resta uno; la selección parcial de aciertos cuenta.
 - **Pistas con el reglamento**: en cada pregunta puedes abrir las directrices
   que cita el catálogo, enlazadas a la página del PDF de las Reglas de Juego
   cuando la referencia corresponde a un capítulo conocido.
 - **Nota y aprobado**: puntuación sobre el total de respuestas posibles, con el
   corte en el 75 % y dos decimales.
-- **Repaso de fallos**: al terminar puedes repetir solo las preguntas falladas.
+- **Repaso de fallos**: al terminar puedes repetir solo las preguntas que no
+  acertaste.
 - **Estadísticas locales**: histórico por navegador con la mezcla de respuestas,
   la regla más y menos acertada y la evolución reciente.
 - **Informe en PDF**: descarga un resumen con cabecera, totales y el detalle de
@@ -60,8 +61,12 @@ estadísticas viajan con la web y viven en el navegador.
 - La nota se calcula sobre el **número de respuestas posibles** del test, no
   sobre el número de preguntas: un test de 5 preguntas cuyas preguntas suman 9
   respuestas correctas se puntúa sobre 9 (`5/6 → 83,33 %`).
-- Cada pregunta suma un punto por cada opción correcta marcada y cero si se
-  marca alguna opción errónea; la selección parcial de aciertos sigue contando.
+- Cada pregunta suma un punto por cada opción correcta marcada y resta un punto
+  por cada opción errónea marcada; la selección parcial de aciertos sigue
+  contando y una pregunta puede terminar en negativo.
+- Si el total queda en negativo, se muestra **0 %** y el resumen indica cuántas
+  respuestas falladas hubo sobre las posibles; el historial guarda ese mismo
+  0 %.
 - Aprobado: `puntuación / respuestas posibles >= 0,75` (5/6, 7/9, 15/20),
   mostrado con dos decimales.
 

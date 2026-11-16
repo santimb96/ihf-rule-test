@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { passes, percentage, questionPoints, requiredCorrect } from '../scripts/scoring.js'
+import { passes, percentage, questionPoints, questionStatus, requiredCorrect, STATUS } from '../scripts/scoring.js'
 
 test('percentage is computed over the number of possible answers, two decimals', () => {
   assert.equal(percentage(5, 6), 83.33)
@@ -10,6 +10,11 @@ test('percentage is computed over the number of possible answers, two decimals',
   assert.equal(percentage(15, 20), 75)
   assert.equal(percentage(0, 6), 0)
   assert.equal(percentage(3, 0), 0)
+})
+
+test('a negative score reports 0%, never a negative percentage', () => {
+  assert.equal(percentage(-1, 6), 0)
+  assert.equal(percentage(-12, 12), 0)
 })
 
 test('pass mark is 75% of the possible answers', () => {
@@ -30,11 +35,24 @@ test('requiredCorrect reports the minimum answers needed to pass', () => {
   assert.equal(requiredCorrect(30), 23)
 })
 
-test('questionPoints counts correct answers and voids any wrong selection', () => {
+test('questionPoints adds one point per correct pick and subtracts one per wrong pick', () => {
   assert.equal(questionPoints(['a', 'b'], ['a', 'b']), 2)
   assert.equal(questionPoints(['b', 'a'], ['a', 'b']), 2)
   assert.equal(questionPoints(['a'], ['a', 'b']), 1)
   assert.equal(questionPoints([], ['a', 'b']), 0)
   assert.equal(questionPoints(['a', 'c'], ['a', 'b']), 0)
-  assert.equal(questionPoints(['a', 'b', 'c'], ['a', 'b']), 0)
+  assert.equal(questionPoints(['b', 'c'], ['a', 'b']), 0)
+  assert.equal(questionPoints(['a', 'b', 'c'], ['a', 'b']), 1)
+  assert.equal(questionPoints(['c'], ['a', 'b']), -1)
+  assert.equal(questionPoints(['a', 'c', 'd'], ['a', 'b']), -1)
+  assert.equal(questionPoints(['c', 'd'], ['a', 'b']), -2)
+})
+
+test('questionStatus follows the net points of the question', () => {
+  assert.equal(questionStatus([], ['a', 'b']), STATUS.unanswered)
+  assert.equal(questionStatus(['a', 'b'], ['a', 'b']), STATUS.correct)
+  assert.equal(questionStatus(['a'], ['a', 'b']), STATUS.partial)
+  assert.equal(questionStatus(['a', 'b', 'c'], ['a', 'b']), STATUS.partial)
+  assert.equal(questionStatus(['a', 'c'], ['a', 'b']), STATUS.wrong)
+  assert.equal(questionStatus(['c'], ['a', 'b']), STATUS.wrong)
 })

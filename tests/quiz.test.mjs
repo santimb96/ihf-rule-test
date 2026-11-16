@@ -150,3 +150,49 @@ test('report exposes one shared classification per question', () => {
   assert.deepEqual(statusById, { '9.1': 'partial', '9.2': 'wrong', '9.3': 'unanswered' })
   assert.equal(report.results.find((result) => result.question.id === '9.1').correct, false)
 })
+
+test('wrong picks subtract from the score, so the report can go negative', () => {
+  const penalty = [
+    {
+      id: '8.1',
+      topic: '8',
+      text: 'Multi answer',
+      options: [
+        { letter: 'a', text: 'Option A' },
+        { letter: 'b', text: 'Option B' },
+        { letter: 'c', text: 'Option C' },
+      ],
+      answer: ['a', 'b'],
+      rules: '8:1',
+    },
+    {
+      id: '8.2',
+      topic: '8',
+      text: 'Single answer',
+      options: [
+        { letter: 'a', text: 'Option A' },
+        { letter: 'b', text: 'Option B' },
+      ],
+      answer: ['a'],
+      rules: '8:2',
+    },
+  ]
+
+  const quiz = createQuiz({ pool: penalty, size: 2, rng: () => 0.5 })
+  const indexOf = (id) => quiz.items.findIndex((question) => question.id === id)
+
+  quiz.select(indexOf('8.1'), ['c'])
+  quiz.select(indexOf('8.2'), ['b'])
+
+  const report = quiz.report()
+  const pointsById = Object.fromEntries(report.results.map((result) => [result.question.id, result.points]))
+
+  assert.deepEqual(pointsById, { '8.1': -1, '8.2': -1 })
+  assert.equal(report.score, -2)
+  assert.equal(report.totalAnswers, 3)
+  assert.equal(report.correctPicks, 0)
+  assert.equal(report.wrongPicks, 2)
+  assert.equal(report.percentage, 0)
+  assert.equal(report.passed, false)
+  assert.equal(report.correct, 0)
+})

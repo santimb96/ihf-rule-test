@@ -24,6 +24,12 @@ test('a correct but incomplete selection is partial, like the review screen', ()
   assert.equal(statusOf(result(['a', 'b'], ['a'], false)), 'partial')
 })
 
+test('more hits than misses stays partial instead of failed', () => {
+  assert.equal(statusOf(result(['a', 'b'], ['a', 'b', 'c'], false)), 'partial')
+  assert.equal(statusOf(result(['a', 'b'], ['a', 'c'], false)), 'failed')
+  assert.equal(statusOf(result(['a', 'b'], ['a', 'b'], true)), 'accepted')
+})
+
 test('status labels reuse the on-screen wording', () => {
   assert.equal(STATUS_LABELS.accepted, 'ACERTADA')
   assert.equal(STATUS_LABELS.partial, 'PARCIAL')
@@ -34,4 +40,8 @@ test('status labels reuse the on-screen wording', () => {
 test('file name repeats the answer score shown in the summary', () => {
   const report = { score: 9, totalAnswers: 12 }
   assert.equal(filenameFor(report, '2026-11-06'), 'ihf-test-9-de-12-2026-11-06.pdf')
+})
+
+test('file name never shows a negative score', () => {
+  assert.equal(filenameFor({ score: -12, totalAnswers: 12 }, '2026-11-06'), 'ihf-test-0-de-12-2026-11-06.pdf')
 })

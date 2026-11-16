@@ -35,12 +35,16 @@ export const createQuiz = ({ pool = [], size, rng = Math.random }) => {
     report () {
       let score = 0
       let totalAnswers = 0
+      let correctPicks = 0
+      let wrongPicks = 0
 
       const results = items.map((question, index) => {
         const picked = selected[index]
         const points = questionPoints(picked, question.answer)
         score += points
         totalAnswers += question.answer.length
+        correctPicks += picked.filter((letter) => question.answer.includes(letter)).length
+        wrongPicks += picked.filter((letter) => !question.answer.includes(letter)).length
         return {
           question,
           selected: picked.slice(),
@@ -56,6 +60,8 @@ export const createQuiz = ({ pool = [], size, rng = Math.random }) => {
         total: items.length,
         totalAnswers,
         score,
+        correctPicks,
+        wrongPicks,
         correct,
         results,
         percentage: percentage(score, totalAnswers),

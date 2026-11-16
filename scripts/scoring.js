@@ -2,13 +2,16 @@ export const PASS_RATIO = 0.75
 export const SUPPORTED_LENGTHS = [5, 10, 20, 30]
 
 // One classification per answered question, shared by the results screen and
-// the stats history: an empty selection is unanswered, any wrong letter voids
-// the question, a full sweep is correct and anything in between is partial.
+// the stats history: an empty selection is unanswered, a net score of zero or
+// less is wrong, a full sweep is correct and anything in between is partial.
 export const STATUS = { correct: 'correct', partial: 'partial', wrong: 'wrong', unanswered: 'unanswered' }
 
 export const percentage = (score, total) => {
   if (!total) return 0
-  return Math.round((score / total) * 10000) / 100
+  // The wrong-mark penalty can push the net score below zero; a negative
+  // percentage is never shown, so it reports as 0%.
+  const shown = Math.max(0, score)
+  return Math.round((shown / total) * 10000) / 100
 }
 
 export const passes = (score, total) => {
@@ -18,16 +21,18 @@ export const passes = (score, total) => {
 
 export const requiredCorrect = (total) => Math.ceil(PASS_RATIO * total)
 
-// The score is counted over the possible answers, not over the questions: a
-// question earns points only when no wrong option is selected.
+// The score is counted over the possible answers, not over the questions:
+// every correct option marked adds a point and every wrong option marked
+// subtracts one, so a question can end up with negative points.
 export const questionPoints = (selected, answer) => {
   if (!selected?.length) return 0
-  if (selected.some((letter) => !answer.includes(letter))) return 0
-  return answer.filter((letter) => selected.includes(letter)).length
+  const hits = selected.filter((letter) => answer.includes(letter)).length
+  return hits - (selected.length - hits)
 }
 
 export const questionStatus = (selected, answer) => {
   if (!selected?.length) return STATUS.unanswered
-  if (selected.some((letter) => !answer.includes(letter))) return STATUS.wrong
-  return questionPoints(selected, answer) === answer.length ? STATUS.correct : STATUS.partial
+  const points = questionPoints(selected, answer)
+  if (points <= 0) return STATUS.wrong
+  return points === answer.length ? STATUS.correct : STATUS.partial
 }

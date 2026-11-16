@@ -7,6 +7,7 @@
 
 import { toast } from './render.js'
 import { topics, topicLabel, chips } from './data.js'
+import { questionStatus } from './scoring.js'
 
 // --- page grid (mm) ------------------------------------------------------
 const PAGE = { w: 210, h: 297 }
@@ -111,18 +112,25 @@ const IW = IR - IX
 const TINT_X = IX - 3 // option tint band
 const TINT_W = IR + 3 - TINT_X
 
+// PDF grouping per outcome, mapped from the one classification shared with the
+// results screen and the stats history, so the report can never disagree.
+const RESULT_STATUS = {
+  correct: 'accepted',
+  partial: 'partial',
+  wrong: 'failed',
+  unanswered: 'unanswered',
+}
+
 export const statusOf = (result) => {
   const answer = (result.question && result.question.answer) || []
-  const selected = result.selected || []
-  if (result.correct) return 'accepted'
-  if (!selected.length) return 'unanswered'
-  const wrong = selected.some((letter) => !answer.includes(letter))
-  return wrong ? 'failed' : 'partial'
+  return RESULT_STATUS[questionStatus(result.selected || [], answer)]
 }
 
 /** The file name repeats the answer score shown in the summary card. */
+// A negative net score is never shown: the file name repeats the score the
+// summary shows, which stops at zero.
 export const filenameFor = (report, stamp) =>
-  `ihf-test-${report.score}-de-${report.totalAnswers}-${stamp}.pdf`
+  `ihf-test-${Math.max(0, report.score)}-de-${report.totalAnswers}-${stamp}.pdf`
 
 // jsPDF standard fonts only cover Latin-1, so normalise typographic glyphs.
 export const sanitize = (text) =>
@@ -425,12 +433,17 @@ export const generate = async (report, config) => {
     const pad = 8
     const tone = passed ? STATUS.accepted : STATUS.failed
     const headline = passed ? '¡Enhorabuena, has aprobado!' : '¡Esta vez no ha sido posible!'
-    const sentence = passed
-      ? `Has acertado ${score} de ${totalAnswers} respuestas (${percentage}%), por encima del 75% exigido.`
-      : `Has acertado ${score} de ${totalAnswers} respuestas (${percentage}%). Necesitabas ${required} respuestas correctas para aprobar (75%).`
+    const shownScore = Math.max(0, score)
+    const wrongPicks = report.wrongPicks || 0
+    const sentence =
+      score < 0
+        ? `Has sumado 0 de ${totalAnswers} puntos (0%). ${wrongPicks} respuestas falladas de ${totalAnswers} posibles. Necesitabas ${required} puntos para aprobar (75%).`
+        : passed
+          ? `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%), por encima del 75% exigido.`
+          : `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%). Necesitabas ${required} puntos para aprobar (75%).`
     const details = [
       `${total}${total === 1 ? ' pregunta' : ' preguntas'}`,
-      `Mínimo para aprobar: ${required}${required === 1 ? ' respuesta' : ' respuestas'} (75%)`,
+      `Mínimo para aprobar: ${required}${required === 1 ? ' punto' : ' puntos'} (75%)`,
       elapsedTime !== undefined ? `Tiempo: ${Math.floor(elapsedTime / 60)}m ${elapsedTime % 60}s` : null,
     ]
       .filter(Boolean)
@@ -463,7 +476,7 @@ export const generate = async (report, config) => {
       align: 'center',
       baseline: 'middle',
     })
-    txt('respuestas', cx, cy + 5.4, {
+    txt('puntos', cx, cy + 5.4, {
       size: 6.2,
       color: C.muted,
       align: 'center',
