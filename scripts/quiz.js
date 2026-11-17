@@ -16,9 +16,13 @@ export const createQuiz = ({ pool = [], size, rng = Math.random, items: restored
   // A resumed exam keeps its exact questions and order; a fresh one shuffles.
   const count = Math.min(size, pool.length)
   const items = restoredItems ? restoredItems.slice() : shuffle(pool, rng).slice(0, count)
-  const selected = items.map((_, index) => {
+  const selected = items.map((question, index) => {
     const letters = restored?.[index]
-    return Array.isArray(letters) ? letters.slice() : []
+    if (!Array.isArray(letters)) return []
+    // A restored answer can outlive a dataset change: letters that no longer
+    // exist on the question are dropped instead of counted as misses.
+    const allowed = new Set(question.options.map((option) => option.letter))
+    return letters.filter((letter) => allowed.has(letter))
   })
 
   return {

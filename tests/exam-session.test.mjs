@@ -14,7 +14,7 @@ const fakeStorage = () => {
 
 const session = {
   config: { topics: ['1', '2'], size: 30, mode: 'exam' },
-  deadline: 1_800_000,
+  deadline: Date.now() + 30 * 60 * 1000,
   questionIds: ['1.1', '1.2'],
   selected: [['a'], []],
 }
@@ -51,13 +51,13 @@ test('a session whose answers do not match its questions is rejected', () => {
   assert.equal(ExamSession.load(storage), null)
 })
 
-test('an expired session still loads: the clock delivers it on resume', () => {
+test('an exam whose time ran out is gone, never resumed', () => {
   const storage = fakeStorage()
-  ExamSession.save({ ...session, deadline: Date.now() - 60_000 }, storage)
+  const now = Date.now()
+  ExamSession.save({ ...session, deadline: now - 1000 }, storage, { tab: 'a', now })
 
-  const loaded = ExamSession.load(storage)
-  assert.ok(loaded)
-  assert.ok(loaded.deadline < Date.now())
+  assert.equal(ExamSession.load(storage, now), null)
+  assert.deepEqual(storage.dump(), {})
 })
 
 test('clear removes the stored exam', () => {
@@ -65,6 +65,33 @@ test('clear removes the stored exam', () => {
   ExamSession.save(session, storage)
   assert.equal(ExamSession.clear(storage), true)
   assert.equal(ExamSession.load(storage), null)
+})
+
+test('an abandoned exam past its deadline from days ago is also gone', () => {
+  const storage = fakeStorage()
+  const now = Date.now()
+  ExamSession.save({ ...session, deadline: now - 3 * 24 * 60 * 60 * 1000 }, storage, { tab: 'a', now })
+
+  assert.equal(ExamSession.load(storage, now), null)
+})
+
+test('a live exam from another tab is never overwritten', () => {
+  const storage = fakeStorage()
+  const now = Date.now()
+  ExamSession.save({ ...session, deadline: now + 600_000 }, storage, { tab: 'other', now })
+
+  assert.equal(ExamSession.save({ ...session, deadline: now + 600_000 }, storage, { tab: 'mine', now }), false)
+  assert.deepEqual(ExamSession.load(storage, now).questionIds, session.questionIds)
+})
+
+test('the same tab, or an expired foreign session, can be overwritten', () => {
+  const storage = fakeStorage()
+  const now = Date.now()
+  ExamSession.save({ ...session, deadline: now + 600_000 }, storage, { tab: 'mine', now })
+  assert.equal(ExamSession.save({ ...session, deadline: now + 600_000 }, storage, { tab: 'mine', now }), true)
+
+  ExamSession.save({ ...session, deadline: now - 1000 }, storage, { tab: 'other', now })
+  assert.equal(ExamSession.save({ ...session, deadline: now + 600_000 }, storage, { tab: 'mine', now }), true)
 })
 
 test('a storage that refuses writes degrades to false', () => {

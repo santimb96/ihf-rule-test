@@ -261,8 +261,17 @@ export const installFakeDom = () => {
     querySelectorAll (selector) {
       return document.body.querySelectorAll(selector)
     },
-    addEventListener () {},
-    removeEventListener () {},
+    listeners: {},
+    addEventListener (type, handler) {
+      if (!document.listeners[type]) document.listeners[type] = []
+      document.listeners[type].push(handler)
+    },
+    removeEventListener (type, handler) {
+      document.listeners[type] = (document.listeners[type] || []).filter((entry) => entry !== handler)
+    },
+    dispatch (type, event) {
+      ;(document.listeners[type] || []).forEach((handler) => handler(event || { type }))
+    },
     activeElement: null,
     documentElement: { classList: new ClassList({}) },
   }
@@ -273,6 +282,8 @@ export const installFakeDom = () => {
   globalThis.document = document
   globalThis.Node = FakeNode
   globalThis.localStorage = localStorage
+  const sessionStorage = createStorage()
+  globalThis.sessionStorage = sessionStorage
   globalThis.window = {
     matchMedia: () => ({ matches: false }),
     scrollTo: () => {},
@@ -280,6 +291,7 @@ export const installFakeDom = () => {
     addEventListener: () => {},
     removeEventListener: () => {},
     localStorage,
+    sessionStorage,
   }
   globalThis.fetch = () => Promise.resolve({ text: () => Promise.resolve('') })
   globalThis.requestAnimationFrame = (cb) => cb()

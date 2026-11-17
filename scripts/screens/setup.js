@@ -209,7 +209,7 @@ export const mount = (node, options) => {
             el('h2', { class: 'font-display text-lg font-semibold text-ink', text: 'Tienes un examen a medias' }),
             el('p', {
               class: 'mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300',
-              text: `Quedan ${formatClock(remainingSeconds(resume.deadline, Date.now()))}. Conserva tus respuestas; si el tiempo ya se agotó, se entregará al reanudar.`,
+              text: `Quedan ${formatClock(remainingSeconds(resume.deadline, Date.now()))}. El reloj no se detiene: si el tiempo se agota antes de que vuelvas, el examen se pierde.`,
             }),
           ),
         ),

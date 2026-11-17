@@ -32,7 +32,8 @@ estadísticas viajan con la web y viven en el navegador.
 - **Modo examen**: 30 preguntas de todo el reglamento en 35 minutos, sin pistas,
   con las reglas de corrección antes de empezar, avisos a los 5 minutos y al
   último minuto, entrega automática cuando el tiempo llega a cero y examen
-  reanudable si recargas la página.
+  reanudable si cierras o recargas la pestaña mientras quede tiempo (el reloj
+  nunca se detiene, así que un examen vencido ya no se puede recuperar).
 - **Corrección por respuesta**: cada opción correcta suma un punto y cada opción
   errónea resta uno; la selección parcial de aciertos cuenta.
 - **Pistas con el reglamento**: en cada pregunta puedes abrir las directrices

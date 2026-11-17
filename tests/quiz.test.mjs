@@ -213,3 +213,13 @@ test('a resumed exam keeps its questions, order and answers', () => {
   const withoutAnswers = createQuiz({ items })
   assert.deepEqual(withoutAnswers.selected(0), [])
 })
+
+test('a restored answer drops letters the question no longer has', () => {
+  const items = [
+    { id: '9.9', topic: '9', text: 'C', options: [{ letter: 'a', text: 'A' }, { letter: 'b', text: 'B' }], answer: ['a'], rules: '9:9' }
+  ]
+
+  const quiz = createQuiz({ items, restored: [['a', 'z']] })
+  assert.deepEqual(quiz.selected(0), ['a'])
+  assert.equal(quiz.report().score, 1)
+})
