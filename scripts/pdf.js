@@ -7,7 +7,7 @@
 
 import { toast } from './render.js'
 import { topics, topicLabel, chips } from './data.js'
-import { questionStatus } from './scoring.js'
+import { PASS_PERCENT, questionStatus } from './scoring.js'
 import { EXAM } from './timer.js'
 
 // --- page grid (mm) ------------------------------------------------------
@@ -438,14 +438,14 @@ export const generate = async (report, config) => {
     const wrongPicks = report.wrongPicks || 0
     const sentence =
       score < 0
-        ? `Has sumado 0 de ${totalAnswers} puntos (0%). ${wrongPicks} respuestas falladas de ${totalAnswers} posibles. Necesitabas ${required} puntos para aprobar (75%).`
+        ? `Has sumado 0 de ${totalAnswers} puntos (0%). ${wrongPicks} respuestas falladas de ${totalAnswers} posibles. Necesitabas ${required} puntos para aprobar (${PASS_PERCENT}%).`
         : passed
-          ? `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%), por encima del 75% exigido.`
-          : `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%). Necesitabas ${required} puntos para aprobar (75%).`
+          ? `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%), por encima del ${PASS_PERCENT}% exigido.`
+          : `Has sumado ${shownScore} de ${totalAnswers} puntos (${percentage}%). Necesitabas ${required} puntos para aprobar (${PASS_PERCENT}%).`
     const details = [
       config.mode === 'exam' ? `Examen · ${EXAM.seconds / 60} minutos` : null,
       `${total}${total === 1 ? ' pregunta' : ' preguntas'}`,
-      `Mínimo para aprobar: ${required}${required === 1 ? ' punto' : ' puntos'} (75%)`,
+      `Mínimo para aprobar: ${required}${required === 1 ? ' punto' : ' puntos'} (${PASS_PERCENT}%)`,
       elapsedTime !== undefined ? `Tiempo: ${Math.floor(elapsedTime / 60)}m ${elapsedTime % 60}s` : null,
     ]
       .filter(Boolean)

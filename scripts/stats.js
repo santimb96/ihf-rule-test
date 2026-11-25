@@ -1,4 +1,4 @@
-import { questionStatus } from './scoring.js'
+import { PASS_PERCENT, passes, questionStatus } from './scoring.js'
 
 export const KEY = 'ihf.stats.v1'
 export const SCHEMA_VERSION = 1
@@ -49,17 +49,23 @@ const sanitizeAttempt = (attempt) => {
   if (!isFiniteNumber(attempt.at) || !isFiniteNumber(attempt.pct)) return null
   if (!Array.isArray(attempt.items)) return null
   const items = attempt.items.map(sanitizeItem).filter(Boolean)
+  const score = isFiniteNumber(attempt.score) ? attempt.score : 0
+  const totalAnswers = isFiniteNumber(attempt.totalAnswers) ? attempt.totalAnswers : 0
+  // App writes never store a negative percentage, but an older or tampered
+  // record must not surface one either.
+  const pct = Math.max(0, attempt.pct)
   return {
     at: attempt.at,
     mode: normalizeMode(attempt.mode),
     size: isFiniteNumber(attempt.size) ? attempt.size : items.length,
     elapsed: isFiniteNumber(attempt.elapsed) ? attempt.elapsed : 0,
-    score: isFiniteNumber(attempt.score) ? attempt.score : 0,
-    totalAnswers: isFiniteNumber(attempt.totalAnswers) ? attempt.totalAnswers : 0,
-    // App writes never store a negative percentage, but an older or tampered
-    // record must not surface one either.
-    pct: Math.max(0, attempt.pct),
-    passed: !!attempt.passed,
+    score,
+    totalAnswers,
+    pct,
+    // The pass mark is a current rule, not a property of the record: re-derive
+    // it on load so an attempt saved under the former 75% mark is not shown as
+    // approved under the current one.
+    passed: totalAnswers > 0 ? passes(score, totalAnswers) : pct >= PASS_PERCENT,
     items,
   }
 }

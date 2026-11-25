@@ -1,4 +1,5 @@
-export const PASS_RATIO = 0.75
+export const PASS_PERCENT = 80
+export const PASS_RATIO = PASS_PERCENT / 100
 export const SUPPORTED_LENGTHS = [5, 10, 20, 30]
 
 // One classification per answered question, shared by the results screen and
@@ -19,7 +20,9 @@ export const passes = (score, total) => {
   return score / total >= PASS_RATIO
 }
 
-export const requiredCorrect = (total) => Math.ceil(PASS_RATIO * total)
+// Integer arithmetic, because 0.8 has no exact binary representation and
+// rounding it can push the required points one above the first passing score.
+export const requiredCorrect = (total) => Math.ceil((total * PASS_PERCENT) / 100)
 
 // Hits and misses over one question: the only place that decides which marked
 // option is which, so the points and the report totals cannot drift apart.

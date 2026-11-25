@@ -7,7 +7,7 @@
 Aplicación web de estudio para preparar los catálogos oficiales de preguntas de
 las Reglas de Juego de la IHF. Eliges los temas y la duración del test,
 respondes, consultas en cada pregunta la directriz del reglamento en la que se
-basa esa respuesta, ves si apruebas (75 % o más) y descargas un informe en PDF.
+basa esa respuesta, ves si apruebas (80 % o más) y descargas un informe en PDF.
 
 **En marcha: <https://catalogoihf.netlify.app/>**
 
@@ -40,7 +40,7 @@ estadísticas viajan con la web y viven en el navegador.
   que cita el catálogo, enlazadas a la página del PDF de las Reglas de Juego
   cuando la referencia corresponde a un capítulo conocido.
 - **Nota y aprobado**: puntuación sobre el total de respuestas posibles, con el
-  corte en el 75 % y dos decimales.
+  corte en el 80 % y dos decimales.
 - **Repaso de fallos**: en práctica, al terminar puedes repetir solo las
   preguntas que no acertaste. Un examen no se repite por partes.
 - **Estadísticas locales**: histórico por navegador con la mezcla de respuestas,
@@ -58,7 +58,7 @@ estadísticas viajan con la web y viven en el navegador.
    antes de empezar).
 2. Responde cada pregunta; en práctica, el botón de pista muestra las
    directrices que el catálogo cita para esa respuesta.
-3. Al terminar verás la puntuación, si apruebas (>= 75 % de las respuestas
+3. Al terminar verás la puntuación, si apruebas (>= 80 % de las respuestas
    posibles) y la revisión pregunta a pregunta.
 4. Descarga el informe en PDF, repite los fallos o empieza un test nuevo.
 5. Abre **Estadísticas** en la cabecera para consultar el histórico guardado en
@@ -75,7 +75,7 @@ estadísticas viajan con la web y viven en el navegador.
 - Si el total queda en negativo, se muestra **0 %** y el resumen indica cuántas
   respuestas falladas hubo sobre las posibles; el historial guarda ese mismo
   0 %.
-- Aprobado: `puntuación / respuestas posibles >= 0,75` (5/6, 7/9, 15/20),
+- Aprobado: `puntuación / respuestas posibles >= 0,80` (5/6, 8/9, 16/20),
   mostrado con dos decimales.
 
 ## Estadísticas en el dispositivo
@@ -124,7 +124,7 @@ vite.config.js      configuración de build (copia documents/ a dist/, precarga 
 styles/             entrada de build y capa de CSS propio (se carga después de las utilidades)
 scripts/
   app.js            entrada del bundler: metadatos del catálogo + main.js
-  scoring.js        regla del 75 % sobre las respuestas posibles y estado de cada pregunta
+  scoring.js        regla del 80 % sobre las respuestas posibles y estado de cada pregunta
   quiz.js           generador de intentos (barajado, respuestas, informe)
   timer.js          reglas del modo examen y aritmética de la cuenta atrás (sin DOM)
   stats.js          histórico por navegador y agregaciones (sin DOM)
@@ -154,7 +154,7 @@ pnpm lint
 
 ## Tests
 
-La suite cubre la integridad del conjunto de datos, la regla del 75 % sobre las
+La suite cubre la integridad del conjunto de datos, la regla del 80 % sobre las
 respuestas posibles, la corrección por respuesta, la clasificación compartida de
 preguntas, el motor de test, la cuenta atrás del modo examen con sus avisos, el
 almacén de estadísticas local y la resolución de las citas de las pistas al

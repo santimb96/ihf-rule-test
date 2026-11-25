@@ -4,6 +4,7 @@ import { questions } from '../data.js'
 import { closeButton, open as openDialog } from '../dialog.js'
 import { append, el, icon, mount as mountChildren, reducedMotion, toast } from '../render.js'
 import { MODES, all, byRule, clear, exportJson, summary, trend } from '../stats.js'
+import { PASS_PERCENT } from '../scoring.js'
 
 const TONE = {
   improved: {
@@ -204,7 +205,7 @@ const historyBlock = (attempts) => {
 }
 
 const accuracyTone = (accuracy) => {
-  if (accuracy >= 75) return 'text-emerald-700 dark:text-emerald-300'
+  if (accuracy >= PASS_PERCENT) return 'text-emerald-700 dark:text-emerald-300'
   if (accuracy >= 50) return 'text-amber-700 dark:text-amber-300'
   return 'text-rose-700 dark:text-rose-300'
 }
@@ -400,7 +401,7 @@ export const open = ({ onCleared } = {}) => {
         card('Tests', String(summaryData.attempts), `${summaryData.questions} preguntas`),
         card('Media', pct(summaryData.averagePct), 'del total'),
         card('Mejor', pct(summaryData.bestPct), 'hasta ahora'),
-        card('Aprobados', `${summaryData.passed} de ${summaryData.attempts}`, '≥75%'),
+        card('Aprobados', `${summaryData.passed} de ${summaryData.attempts}`, `≥${PASS_PERCENT}%`),
       ]),
       el('div', { class: 'mt-3 space-y-3' }, [
         trendBlock(trendData),

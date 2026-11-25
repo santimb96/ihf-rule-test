@@ -5,7 +5,7 @@
 import { topicLabel, topics } from '../data.js'
 import { create as createHint } from '../hint.js'
 import { append, clear, el, icon, mount as mountChildren } from '../render.js'
-import { STATUS } from '../scoring.js'
+import { PASS_PERCENT, STATUS } from '../scoring.js'
 
 const CIRCUMFERENCE = 2 * Math.PI * 54
 
@@ -390,7 +390,7 @@ export const mount = (node, options) => {
           }),
           ` (${report.percentage}%).`,
           negative ? ` ${wrongPicks} respuestas falladas de ${report.totalAnswers} posibles.` : '',
-          report.passed ? ' Por encima del 75% exigido.' : ` Necesitabas ${report.required} puntos para aprobar (75%).`,
+          report.passed ? ` Por encima del ${PASS_PERCENT}% exigido.` : ` Necesitabas ${report.required} puntos para aprobar (${PASS_PERCENT}%).`,
         ]),
         el(
           'div',

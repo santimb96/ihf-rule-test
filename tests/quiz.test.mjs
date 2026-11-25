@@ -47,7 +47,7 @@ test('answers are stored per question and grading produces a report', () => {
   assert.equal(report.results[1].points, 0)
 })
 
-test('report exposes pass state using the 75% rule', () => {
+test('report exposes pass state using the 80% rule', () => {
   const quiz = createQuiz({ pool: pool.slice(0, 5), size: 5, rng: () => 0 })
   quiz.items.forEach((question, index) => {
     if (index < 4) quiz.select(index, question.answer)
@@ -59,6 +59,19 @@ test('report exposes pass state using the 75% rule', () => {
   assert.equal(report.totalAnswers, 5)
   assert.equal(report.passed, true)
   assert.equal(report.percentage, 80)
+  assert.equal(report.required, 4)
+})
+
+test('one answer below the 80% mark fails the whole report', () => {
+  const quiz = createQuiz({ pool: pool.slice(0, 5), size: 5, rng: () => 0 })
+  quiz.items.forEach((question, index) => {
+    if (index < 3) quiz.select(index, question.answer)
+  })
+
+  const report = quiz.report()
+  assert.equal(report.score, 3)
+  assert.equal(report.percentage, 60)
+  assert.equal(report.passed, false)
   assert.equal(report.required, 4)
 })
 

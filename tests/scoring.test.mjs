@@ -17,22 +17,34 @@ test('a negative score reports 0%, never a negative percentage', () => {
   assert.equal(percentage(-12, 12), 0)
 })
 
-test('pass mark is 75% of the possible answers', () => {
+test('pass mark is 80% of the possible answers', () => {
   assert.equal(passes(5, 6), true)
   assert.equal(passes(4, 6), false)
-  assert.equal(passes(7, 9), true)
-  assert.equal(passes(6, 9), false)
-  assert.equal(passes(15, 20), true)
-  assert.equal(passes(14, 20), false)
+  assert.equal(passes(8, 9), true)
+  assert.equal(passes(7, 9), false)
+  assert.equal(passes(4, 5), true)
+  assert.equal(passes(3, 5), false)
+  assert.equal(passes(16, 20), true)
+  assert.equal(passes(15, 20), false)
+  assert.equal(passes(24, 30), true)
+  assert.equal(passes(23, 30), false)
   assert.equal(passes(0, 5), false)
 })
 
 test('requiredCorrect reports the minimum answers needed to pass', () => {
   assert.equal(requiredCorrect(6), 5)
-  assert.equal(requiredCorrect(9), 7)
+  assert.equal(requiredCorrect(9), 8)
   assert.equal(requiredCorrect(5), 4)
-  assert.equal(requiredCorrect(20), 15)
-  assert.equal(requiredCorrect(30), 23)
+  assert.equal(requiredCorrect(20), 16)
+  assert.equal(requiredCorrect(30), 24)
+})
+
+test('the required points are exactly the first passing score', () => {
+  for (const total of [5, 6, 7, 9, 10, 12, 20, 23, 30, 33]) {
+    const required = requiredCorrect(total)
+    assert.equal(passes(required, total), true, `${required}/${total} should pass`)
+    assert.equal(passes(required - 1, total), false, `${required - 1}/${total} should fail`)
+  }
 })
 
 test('questionPoints adds one point per correct pick and subtracts one per wrong pick', () => {

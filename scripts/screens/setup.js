@@ -1,6 +1,6 @@
 import { el, icon, append } from '../render.js'
 import { topics, poolSize, getMeta } from '../data.js'
-import { SUPPORTED_LENGTHS } from '../scoring.js'
+import { PASS_PERCENT, SUPPORTED_LENGTHS } from '../scoring.js'
 import { EXAM, formatClock, remainingSeconds } from '../timer.js'
 
 // Setup screen: mode, topic filter, test length picker and start CTA. The pool
@@ -113,7 +113,7 @@ export const mount = (node, options) => {
       ? 'Necesitas al menos 5 preguntas: selecciona más temas.'
       : exam
         ? `Examen: ${Math.min(EXAM.size, available)} preguntas · ${EXAM.seconds / 60} minutos · sin pistas`
-        : `Aprobado con ≥75% de los puntos · ${size} preguntas`
+        : `Aprobado con ≥${PASS_PERCENT}% de los puntos · ${size} preguntas`
     const noteClass = shortPool ? 'text-xs font-medium text-rose-700' : 'text-xs text-slate-500'
     if (poolNote.textContent !== note) poolNote.textContent = note
     if (poolNote.className !== noteClass) poolNote.className = noteClass
@@ -447,7 +447,7 @@ export const mount = (node, options) => {
         el('h2', { class: 'font-display text-lg font-semibold text-ink', text: 'Preguntas por cuestionario' }),
         el(
           'p',
-          { class: 'text-xs text-slate-500', text: 'Se aprueba con un 75% o más de los puntos posibles. ' },
+          { class: 'text-xs text-slate-500', text: `Se aprueba con un ${PASS_PERCENT}% o más de los puntos posibles. ` },
           el('strong', { class: 'font-semibold text-ink', text: 'Una o varias respuestas correctas por pregunta.' }),
         ),
       ),

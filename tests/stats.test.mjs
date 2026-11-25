@@ -27,7 +27,7 @@ const attempt = (pct, options = {}) => {
     score: options.score || 0,
     totalAnswers: options.totalAnswers || 0,
     pct,
-    passed: pct >= 75,
+    passed: pct >= 80,
     items,
   }
 }
@@ -110,6 +110,23 @@ test('load never surfaces a negative percentage from an old record', () => {
 
   assert.equal(loaded.attempts[0].pct, 0)
   assert.equal(Stats.summary(loaded.attempts).averagePct, 0)
+})
+
+test('load re-derives the pass state with the current 80% rule', () => {
+  const stored = {
+    v: 1,
+    attempts: [
+      { at: 1, pct: 75, passed: true, score: 15, totalAnswers: 20, items: [] },
+      { at: 2, pct: 80, passed: false, score: 16, totalAnswers: 20, items: [] },
+      { at: 3, pct: 75, passed: true, items: [] },
+    ],
+  }
+  const loaded = Stats.load(fakeStorage({ [Stats.KEY]: JSON.stringify(stored) }))
+
+  assert.equal(loaded.attempts[0].passed, false)
+  assert.equal(loaded.attempts[1].passed, true)
+  assert.equal(loaded.attempts[2].passed, false)
+  assert.equal(Stats.summary(loaded.attempts).passed, 1)
 })
 
 test('save reports a refused write instead of throwing', () => {
